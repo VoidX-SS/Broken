@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 interface WardrobeDisplayProps {
   wardrobe: WardrobeItem[];
-  onAddItem: (item: Omit<WardrobeItem, 'id' | 'userProfileId'>) => void;
+  onAddItem: (item: Omit<WardrobeItem, 'id'>) => void;
   onDeleteItem: (id: string) => void;
   isLoading: boolean;
 }

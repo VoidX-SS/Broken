@@ -49,7 +49,7 @@ const formSchema = z.object({
 
 interface AddItemDialogProps {
   children: React.ReactNode;
-  onAddItem: (item: Omit<WardrobeItem, 'id' | 'userProfileId'>) => void;
+  onAddItem: (item: Omit<WardrobeItem, 'id'>) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }

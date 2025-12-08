@@ -7,7 +7,6 @@ export const wardrobeCategories: WardrobeCategory[] = ['Top', 'Bottom', 'Outerwe
 
 export interface WardrobeItem {
   id: string;
-  userProfileId: string;
   photoDataUri: string;
   description: string;
   category: WardrobeCategory;

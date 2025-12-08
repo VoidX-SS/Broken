@@ -3,7 +3,6 @@
 import React from 'react';
 import {
   useCollection,
-  useUser,
   useFirestore,
   useMemoFirebase,
   addDocumentNonBlocking,
@@ -19,21 +18,20 @@ import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/context/language-context';
 
 export function MainApp() {
-  const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const { translations } = useLanguage();
 
-  const userWardrobeQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return collection(firestore, `userProfiles/${user.uid}/clothingItems`);
-  }, [firestore, user]);
+  const wardrobeCollectionQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, `wardrobe`);
+  }, [firestore]);
 
   const {
     data: wardrobe,
     isLoading: isWardrobeLoading,
     error: wardrobeError,
-  } = useCollection<WardrobeItem>(userWardrobeQuery);
+  } = useCollection<WardrobeItem>(wardrobeCollectionQuery);
 
   if (wardrobeError) {
     // This will be caught by the FirebaseErrorListener and thrown
@@ -42,36 +40,33 @@ export function MainApp() {
   }
 
   const handleAddItem = async (item: Omit<WardrobeItem, 'id' | 'userProfileId'>) => {
-    if (!user || !firestore) {
+    if (!firestore) {
       toast({
         variant: 'destructive',
         title: translations.toast.genericError.title,
-        description: 'User not authenticated.',
+        description: 'Firestore not available.',
       });
       return;
     }
-    const clothingCollectionRef = collection(firestore, `userProfiles/${user.uid}/clothingItems`);
+    const clothingCollectionRef = collection(firestore, `wardrobe`);
     
-    addDocumentNonBlocking(clothingCollectionRef, {
-      ...item,
-      userProfileId: user.uid,
-    });
+    addDocumentNonBlocking(clothingCollectionRef, item);
   };
 
   const handleDeleteItem = async (id: string) => {
-    if (!user || !firestore) {
+    if (!firestore) {
       toast({
         variant: 'destructive',
         title: translations.toast.genericError.title,
-        description: 'User not authenticated.',
+        description: 'Firestore not available.',
       });
       return;
     }
-    const itemDocRef = doc(firestore, `userProfiles/${user.uid}/clothingItems`, id);
+    const itemDocRef = doc(firestore, `wardrobe`, id);
     deleteDocumentNonBlocking(itemDocRef);
   };
   
-  const isLoading = isUserLoading || isWardrobeLoading;
+  const isLoading = isWardrobeLoading;
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
