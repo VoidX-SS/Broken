@@ -4,10 +4,11 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/context/language-context';
 
 export function RealTimeClock() {
-  const [date, setDate] = useState(new Date());
+  const [date, setDate] = useState<Date | null>(null);
   const { language } = useLanguage();
 
   useEffect(() => {
+    setDate(new Date());
     const timerId = setInterval(() => setDate(new Date()), 1000);
     return () => clearInterval(timerId);
   }, []);
@@ -27,8 +28,8 @@ export function RealTimeClock() {
   };
 
   return (
-    <div className="hidden text-sm text-muted-foreground sm:block">
-      {formatDate(date)}
+    <div className="hidden text-sm text-muted-foreground sm:block h-5 w-64">
+      {date ? formatDate(date) : null}
     </div>
   );
 }
