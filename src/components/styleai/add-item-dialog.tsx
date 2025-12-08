@@ -49,13 +49,12 @@ const formSchema = z.object({
 });
 
 interface AddItemDialogProps {
-  children: React.ReactNode;
   onAddItem: (item: Omit<WardrobeItem, 'id'>) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function AddItemDialog({ children, onAddItem, open, onOpenChange }: AddItemDialogProps) {
+export function AddItemDialog({ onAddItem, open, onOpenChange }: AddItemDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);

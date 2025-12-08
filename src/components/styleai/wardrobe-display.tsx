@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from "react";
@@ -31,16 +32,15 @@ export function WardrobeDisplay({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold tracking-tight">{currentTranslations.title}</h2>
+        <Button onClick={() => setIsDialogOpen(true)}>
+          <Plus className="-ml-1 mr-2 h-4 w-4" />
+          {currentTranslations.button}
+        </Button>
         <AddItemDialog
           open={isDialogOpen}
           onOpenChange={setIsDialogOpen}
           onAddItem={onAddItem}
-        >
-          <Button>
-            <Plus className="-ml-1 mr-2 h-4 w-4" />
-            {currentTranslations.button}
-          </Button>
-        </AddItemDialog>
+        />
       </div>
       
       {isLoading ? (
