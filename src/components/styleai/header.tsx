@@ -1,8 +1,8 @@
+
 "use client";
 
 import { Settings } from "lucide-react";
 import { useLanguage, type Language } from "@/context/language-context";
-import { Logo } from "@/components/icons/logo";
 import { RealTimeClock } from "@/components/styleai/real-time-clock";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,7 +26,9 @@ export function AppHeader() {
     <header className="border-b">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-4">
-          <Logo className="h-7 w-auto" />
+          <div className="text-xl font-bold tracking-tight text-primary">
+            Gương Thông Minh
+          </div>
         </div>
         <div className="flex items-center gap-4">
           <RealTimeClock />

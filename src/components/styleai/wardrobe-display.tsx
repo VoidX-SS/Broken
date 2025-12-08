@@ -44,7 +44,7 @@ export function WardrobeDisplay({
       </div>
       
       {isLoading ? (
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="space-y-2">
               <Skeleton className="aspect-square w-full rounded-lg" />
@@ -54,7 +54,7 @@ export function WardrobeDisplay({
           ))}
         </div>
       ) : wardrobe.length > 0 ? (
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
           {wardrobe.map((item) => (
             <WardrobeItemCard
               key={item.id}
