@@ -72,20 +72,20 @@ export function MainApp() {
     <div className="flex min-h-screen flex-col bg-background">
       <AppHeader />
       <main className="flex-1">
-        <div className="container mx-auto grid flex-1 gap-12 p-4 md:grid-cols-3 md:p-8 lg:grid-cols-[1fr_2fr]">
+        <div className="container mx-auto grid flex-1 gap-12 p-4 md:grid-cols-3 md:p-8 lg:grid-cols-[2fr_1fr]">
+          <div className="md:col-span-2 lg:col-span-1">
+            <StylingAssistant wardrobe={wardrobe || []} />
+          </div>
           <aside className="md:col-span-1 lg:col-span-1">
             <div className="sticky top-24">
-              <StylingAssistant wardrobe={wardrobe || []} />
+              <WardrobeDisplay
+                wardrobe={wardrobe || []}
+                onAddItem={handleAddItem}
+                onDeleteItem={handleDeleteItem}
+                isLoading={isLoading}
+              />
             </div>
           </aside>
-          <div className="md:col-span-2 lg:col-span-1">
-            <WardrobeDisplay
-              wardrobe={wardrobe || []}
-              onAddItem={handleAddItem}
-              onDeleteItem={handleDeleteItem}
-              isLoading={isLoading}
-            />
-          </div>
         </div>
       </main>
     </div>

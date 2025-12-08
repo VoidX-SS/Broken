@@ -131,7 +131,7 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
             {extractedOutfit.items.length > 0 && (
               <div>
                 <p className="mb-2 text-sm font-semibold">{currentTranslations.suggestedItems}</p>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-2">
                   {extractedOutfit.items.map((item) => (
                     <div key={item.id} className="overflow-hidden rounded-md border">
                        <Image
@@ -171,81 +171,84 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
   }
 
   return (
-    <Card className="flex h-[75vh] flex-col">
-      <CardHeader className="flex-row items-center gap-3 space-y-0">
-        <Sparkles className="h-6 w-6 text-primary" />
-        <CardTitle>{currentTranslations.title}</CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-1 flex-col gap-4 overflow-hidden">
-        <ScrollArea className="flex-1 pr-4" ref={scrollAreaRef}>
-          <div className="space-y-6">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={cn(
-                  "flex items-start gap-3",
-                  message.sender === "user" ? "justify-end" : ""
-                )}
-              >
-                {message.sender === "ai" && (
-                  <Avatar className="h-8 w-8 border border-primary/20">
-                    <AvatarFallback className="bg-primary/10 text-primary">
-                      <Bot className="h-5 w-5" />
-                    </AvatarFallback>
-                  </Avatar>
-                )}
-                <div
-                  className={cn(
-                    "max-w-xs rounded-lg px-4 py-3 text-sm lg:max-w-md",
-                    message.sender === "ai"
-                      ? "bg-muted"
-                      : "bg-primary text-primary-foreground"
-                  )}
-                >
-                  {message.text}
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <Card className="lg:col-span-2 flex h-[75vh] flex-col">
+            <CardHeader className="flex-row items-center gap-3 space-y-0">
+                <Sparkles className="h-6 w-6 text-primary" />
+                <CardTitle>{currentTranslations.title}</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-1 flex-col gap-4 overflow-hidden">
+                <ScrollArea className="flex-1 pr-4" ref={scrollAreaRef}>
+                <div className="space-y-6">
+                    {messages.map((message) => (
+                    <div
+                        key={message.id}
+                        className={cn(
+                        "flex items-start gap-3",
+                        message.sender === "user" ? "justify-end" : ""
+                        )}
+                    >
+                        {message.sender === "ai" && (
+                        <Avatar className="h-8 w-8 border border-primary/20">
+                            <AvatarFallback className="bg-primary/10 text-primary">
+                            <Bot className="h-5 w-5" />
+                            </AvatarFallback>
+                        </Avatar>
+                        )}
+                        <div
+                        className={cn(
+                            "max-w-md rounded-lg px-4 py-3 text-sm lg:max-w-lg",
+                            message.sender === "ai"
+                            ? "bg-muted"
+                            : "bg-primary text-primary-foreground"
+                        )}
+                        >
+                        {message.text}
+                        </div>
+                        {message.sender === "user" && (
+                        <Avatar className="h-8 w-8">
+                            <AvatarFallback>
+                            <User className="h-5 w-5" />
+                            </AvatarFallback>
+                        </Avatar>
+                        )}
+                    </div>
+                    ))}
+                    {isLoading && (
+                    <div className="flex items-start gap-3">
+                        <Avatar className="h-8 w-8 border border-primary/20">
+                        <AvatarFallback className="bg-primary/10 text-primary">
+                            <Bot className="h-5 w-5" />
+                        </AvatarFallback>
+                        </Avatar>
+                        <div className="flex items-center space-x-2 rounded-lg bg-muted px-4 py-3">
+                        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                        <span className="text-sm text-muted-foreground">
+                            {currentTranslations.loading}...
+                        </span>
+                        </div>
+                    </div>
+                    )}
                 </div>
-                {message.sender === "user" && (
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback>
-                      <User className="h-5 w-5" />
-                    </AvatarFallback>
-                  </Avatar>
-                )}
-              </div>
-            ))}
-            {isLoading && (
-              <div className="flex items-start gap-3">
-                <Avatar className="h-8 w-8 border border-primary/20">
-                  <AvatarFallback className="bg-primary/10 text-primary">
-                    <Bot className="h-5 w-5" />
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex items-center space-x-2 rounded-lg bg-muted px-4 py-3">
-                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                  <span className="text-sm text-muted-foreground">
-                    {currentTranslations.loading}...
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
-        </ScrollArea>
-        </CardContent>
-        <CardFooter>
+                </ScrollArea>
+            </CardContent>
+        </Card>
+
+        <div className="lg:col-span-1">
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(onSubmit)}
-                className="flex w-full flex-col gap-4"
+                className="flex h-full flex-col gap-4"
               >
-                <div className="grid gap-4">
+                <div className="grid gap-4 flex-1">
                   <FormField
                     control={form.control}
                     name="occasion"
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className="flex flex-col">
                         <FormLabel>{currentTranslations.occasion}</FormLabel>
                         <FormControl>
-                          <Textarea placeholder={currentTranslations.occasionPlaceholder} {...field} rows={2} />
+                          <Textarea placeholder={currentTranslations.occasionPlaceholder} {...field} className="flex-1" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -255,10 +258,10 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
                     control={form.control}
                     name="weather"
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className="flex flex-col">
                         <FormLabel>{currentTranslations.weather}</FormLabel>
                         <FormControl>
-                          <Textarea placeholder={currentTranslations.weatherPlaceholder} {...field} rows={2} />
+                          <Textarea placeholder={currentTranslations.weatherPlaceholder} {...field} className="flex-1" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -271,7 +274,7 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
                 </Button>
               </form>
             </Form>
-        </CardFooter>
-    </Card>
+        </div>
+    </div>
   );
 }

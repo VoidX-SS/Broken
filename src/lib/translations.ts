@@ -60,7 +60,7 @@ export const translations = {
       ariaLabel: 'Xóa món đồ',
     },
     stylingAssistant: {
-      title: 'Trợ lý phong cách AI',
+      title: 'Trợ lý phối đồ',
       initialMessage: 'Xin chào! Hãy cho tôi biết về dịp và thời tiết, tôi sẽ gợi ý một bộ trang phục từ tủ đồ của bạn.',
       loading: 'Đang tạo kiểu',
       occasion: 'Dịp',
