@@ -49,7 +49,7 @@ const formSchema = z.object({
 
 interface AddItemDialogProps {
   children: React.ReactNode;
-  onAddItem: (item: Omit<WardrobeItem, 'id'>) => void;
+  onAddItem: (item: Omit<WardrobeItem, 'id' | 'userProfileId'>) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -127,7 +127,7 @@ export function AddItemDialog({ children, onAddItem, open, onOpenChange }: AddIt
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
-    await onAddItem(values);
+    onAddItem(values);
     setIsSubmitting(false);
     form.reset();
     onOpenChange(false);

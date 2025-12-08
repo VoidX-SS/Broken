@@ -8,17 +8,20 @@ import { Button } from "@/components/ui/button";
 import { WardrobeItemCard } from "@/components/styleai/wardrobe-item-card";
 import { AddItemDialog } from "@/components/styleai/add-item-dialog";
 import { EmptyWardrobe } from "./empty-wardrobe";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface WardrobeDisplayProps {
   wardrobe: WardrobeItem[];
-  onAddItem: (item: Omit<WardrobeItem, 'id'>) => void;
+  onAddItem: (item: Omit<WardrobeItem, 'id' | 'userProfileId'>) => void;
   onDeleteItem: (id: string) => void;
+  isLoading: boolean;
 }
 
 export function WardrobeDisplay({
   wardrobe,
   onAddItem,
   onDeleteItem,
+  isLoading,
 }: WardrobeDisplayProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { translations } = useLanguage();
@@ -39,8 +42,18 @@ export function WardrobeDisplay({
           </Button>
         </AddItemDialog>
       </div>
-
-      {wardrobe.length > 0 ? (
+      
+      {isLoading ? (
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="space-y-2">
+              <Skeleton className="aspect-square w-full rounded-lg" />
+              <Skeleton className="h-4 w-1/2" />
+              <Skeleton className="h-4 w-3/4" />
+            </div>
+          ))}
+        </div>
+      ) : wardrobe.length > 0 ? (
         <div className="grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {wardrobe.map((item) => (
             <WardrobeItemCard

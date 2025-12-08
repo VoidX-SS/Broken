@@ -1,69 +1,77 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import { collection, getDocs, addDoc, deleteDoc, doc } from "firebase/firestore";
-import type { WardrobeItem } from "@/lib/types";
-import { db } from "@/lib/firebase";
-import { AppHeader } from "@/components/styleai/header";
-import { StylingAssistant } from "@/components/styleai/styling-assistant";
-import { WardrobeDisplay } from "@/components/styleai/wardrobe-display";
-import { useToast } from "@/hooks/use-toast";
-import { useLanguage } from "@/context/language-context";
+import React from 'react';
+import {
+  useCollection,
+  useUser,
+  useFirestore,
+  useMemoFirebase,
+  addDocumentNonBlocking,
+  deleteDocumentNonBlocking,
+} from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
+
+import type { WardrobeItem } from '@/lib/types';
+import { AppHeader } from '@/components/styleai/header';
+import { StylingAssistant } from '@/components/styleai/styling-assistant';
+import { WardrobeDisplay } from '@/components/styleai/wardrobe-display';
+import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/context/language-context';
 
 export function MainApp() {
-  const [wardrobe, setWardrobe] = useState<WardrobeItem[]>([]);
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
   const { toast } = useToast();
   const { translations } = useLanguage();
 
-  useEffect(() => {
-    const fetchWardrobe = async () => {
-      try {
-        const querySnapshot = await getDocs(collection(db, "wardrobe"));
-        const items = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as WardrobeItem[];
-        setWardrobe(items);
-      } catch (error) {
-        console.error("Error fetching wardrobe: ", error);
-        toast({
-          variant: 'destructive',
-          title: translations.toast.genericError.title,
-          description: "Could not fetch wardrobe from Firebase.",
-        });
-      }
-    };
+  const userWardrobeQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return collection(firestore, `userProfiles/${user.uid}/clothingItems`);
+  }, [firestore, user]);
 
-    fetchWardrobe();
-  }, [toast, translations.toast.genericError.title]);
+  const {
+    data: wardrobe,
+    isLoading: isWardrobeLoading,
+    error: wardrobeError,
+  } = useCollection<WardrobeItem>(userWardrobeQuery);
 
-  const handleAddItem = async (item: Omit<WardrobeItem, 'id'>) => {
-    try {
-      const docRef = await addDoc(collection(db, "wardrobe"), item);
-      setWardrobe((prev) => [...prev, { ...item, id: docRef.id }]);
-    } catch (error) {
-      console.error("Error adding item: ", error);
-       toast({
-        variant: 'destructive',
-        title: translations.toast.genericError.title,
-        description: "Could not save item to Firebase.",
-      });
-    }
-  };
+  if (wardrobeError) {
+    // This will be caught by the FirebaseErrorListener and thrown
+    // to the nearest error boundary, which is Next.js's default.
+    // No need to render a UI here.
+  }
 
-  const handleDeleteItem = async (id: string) => {
-    try {
-      await deleteDoc(doc(db, "wardrobe", id));
-      setWardrobe((prev) => prev.filter((item) => item.id !== id));
-    } catch (error) {
-      console.error("Error deleting item: ", error);
+  const handleAddItem = async (item: Omit<WardrobeItem, 'id' | 'userProfileId'>) => {
+    if (!user || !firestore) {
       toast({
         variant: 'destructive',
         title: translations.toast.genericError.title,
-        description: "Could not delete item from Firebase.",
+        description: 'User not authenticated.',
       });
+      return;
     }
+    const clothingCollectionRef = collection(firestore, `userProfiles/${user.uid}/clothingItems`);
+    
+    addDocumentNonBlocking(clothingCollectionRef, {
+      ...item,
+      userProfileId: user.uid,
+    });
   };
+
+  const handleDeleteItem = async (id: string) => {
+    if (!user || !firestore) {
+      toast({
+        variant: 'destructive',
+        title: translations.toast.genericError.title,
+        description: 'User not authenticated.',
+      });
+      return;
+    }
+    const itemDocRef = doc(firestore, `userProfiles/${user.uid}/clothingItems`, id);
+    deleteDocumentNonBlocking(itemDocRef);
+  };
+  
+  const isLoading = isUserLoading || isWardrobeLoading;
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -72,14 +80,15 @@ export function MainApp() {
         <div className="container mx-auto grid flex-1 gap-12 p-4 md:grid-cols-3 md:p-8 lg:grid-cols-[1fr_2fr]">
           <aside className="md:col-span-1 lg:col-span-1">
             <div className="sticky top-24">
-              <StylingAssistant wardrobe={wardrobe} />
+              <StylingAssistant wardrobe={wardrobe || []} />
             </div>
           </aside>
           <div className="md:col-span-2 lg:col-span-1">
             <WardrobeDisplay
-              wardrobe={wardrobe}
+              wardrobe={wardrobe || []}
               onAddItem={handleAddItem}
               onDeleteItem={handleDeleteItem}
+              isLoading={isLoading}
             />
           </div>
         </div>
