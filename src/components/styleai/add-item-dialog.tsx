@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, UploadCloud, Image as ImageIcon, Sparkles } from "lucide-react";
+import { Loader2, UploadCloud, Sparkles } from "lucide-react";
 import Image from "next/image";
 
 import { generateDescriptionForClothingItem } from "@/ai/flows/generate-description-from-photo";
@@ -34,7 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { WardrobeItem, WardrobeCategory } from "@/lib/types";
+import type { WardrobeItem } from "@/lib/types";
 import { wardrobeCategories, getCategoryName } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/context/language-context";
@@ -49,7 +49,7 @@ const formSchema = z.object({
 
 interface AddItemDialogProps {
   children: React.ReactNode;
-  onAddItem: (item: WardrobeItem) => void;
+  onAddItem: (item: Omit<WardrobeItem, 'id'>) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -125,15 +125,12 @@ export function AddItemDialog({ children, onAddItem, open, onOpenChange }: AddIt
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [photoDataUri, language]);
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
-    const newItem: WardrobeItem = {
-      id: `item-${Date.now()}`,
-      ...values,
-    };
-    onAddItem(newItem);
+    await onAddItem(values);
     setIsSubmitting(false);
     form.reset();
+    onOpenChange(false);
   };
   
   const currentTranslations = translations.addItemDialog;

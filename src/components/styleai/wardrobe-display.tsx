@@ -11,7 +11,7 @@ import { EmptyWardrobe } from "./empty-wardrobe";
 
 interface WardrobeDisplayProps {
   wardrobe: WardrobeItem[];
-  onAddItem: (item: WardrobeItem) => void;
+  onAddItem: (item: Omit<WardrobeItem, 'id'>) => void;
   onDeleteItem: (id: string) => void;
 }
 
@@ -31,10 +31,7 @@ export function WardrobeDisplay({
         <AddItemDialog
           open={isDialogOpen}
           onOpenChange={setIsDialogOpen}
-          onAddItem={(item) => {
-            onAddItem(item);
-            setIsDialogOpen(false);
-          }}
+          onAddItem={onAddItem}
         >
           <Button>
             <Plus className="-ml-1 mr-2 h-4 w-4" />
