@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, UploadCloud, Image as ImageIcon } from "lucide-react";
+import { Loader2, UploadCloud, Image as ImageIcon, Sparkles } from "lucide-react";
 import Image from "next/image";
 
+import { generateDescriptionForClothingItem } from "@/ai/flows/generate-description-from-photo";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -15,7 +16,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -55,6 +55,7 @@ interface AddItemDialogProps {
 
 export function AddItemDialog({ children, onAddItem, open, onOpenChange }: AddItemDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -94,6 +95,31 @@ export function AddItemDialog({ children, onAddItem, open, onOpenChange }: AddIt
     }
   };
 
+  const handleGenerateDescription = async () => {
+    if (!photoDataUri) return;
+    setIsGeneratingDescription(true);
+    try {
+      const result = await generateDescriptionForClothingItem({ photoDataUri });
+      form.setValue("description", result.description, { shouldValidate: true });
+    } catch (error) {
+      console.error("Failed to generate description:", error);
+      toast({
+        variant: "destructive",
+        title: "Oh no!",
+        description: "Could not generate a description for the image. Please write one manually.",
+      });
+    } finally {
+      setIsGeneratingDescription(false);
+    }
+  };
+
+  useEffect(() => {
+    if (photoDataUri) {
+      handleGenerateDescription();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [photoDataUri]);
+
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
     const newItem: WardrobeItem = {
@@ -110,12 +136,11 @@ export function AddItemDialog({ children, onAddItem, open, onOpenChange }: AddIt
       if (!isOpen) form.reset();
       onOpenChange(isOpen);
     }}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add to Wardrobe</DialogTitle>
           <DialogDescription>
-            Upload a picture of your clothing item and tell us about it.
+            Upload a picture of your clothing item. The AI will generate a description for you.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -172,7 +197,7 @@ export function AddItemDialog({ children, onAddItem, open, onOpenChange }: AddIt
                   <FormLabel>Category</FormLabel>
                   <Select
                     onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    value={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -199,10 +224,27 @@ export function AddItemDialog({ children, onAddItem, open, onOpenChange }: AddIt
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Blue denim jacket" {...field} />
+                    <div className="relative">
+                      <Input placeholder="e.g., Blue denim jacket" {...field} />
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-primary"
+                        onClick={handleGenerateDescription}
+                        disabled={isGeneratingDescription || !photoDataUri}
+                        aria-label="Generate description"
+                      >
+                        {isGeneratingDescription ? (
+                           <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Sparkles className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
                   </FormControl>
                   <FormDescription>
-                    A brief description for the AI to identify the item.
+                    The AI will generate this automatically. You can edit it if needed.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -212,10 +254,10 @@ export function AddItemDialog({ children, onAddItem, open, onOpenChange }: AddIt
             <DialogFooter className="pt-4">
               <Button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || isGeneratingDescription}
                 className="w-full sm:w-auto"
               >
-                {isSubmitting && (
+                {(isSubmitting || isGeneratingDescription) && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
                 Add Item
