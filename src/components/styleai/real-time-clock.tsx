@@ -32,7 +32,7 @@ export function RealTimeClock() {
     const dateString = new Intl.DateTimeFormat(locale, dateOptions).format(date);
 
     if (language === 'vi') {
-        return `${timeString} lúc ${dateString}`;
+        return `${timeString} tại ${dateString}`;
     }
     // For English or other languages
     return `${dateString}, ${timeString}`;

@@ -5,23 +5,26 @@ import { Sparkles, User, Bot, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import Image from "next/image";
 
 import { suggestOutfit } from "@/ai/flows/suggest-outfit-from-wardrobe";
+import { extractOutfitFromText } from "@/ai/flows/extract-outfit-from-text";
 import type { WardrobeItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/context/language-context";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
+  FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
@@ -39,6 +42,12 @@ type Message = {
   sender: "user" | "ai";
   text: string | React.ReactNode;
 };
+
+type OutfitSuggestion = {
+  suggestion: string;
+  reasoning: string;
+  items: WardrobeItem[];
+}
 
 export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
   const { language, translations } = useLanguage();
@@ -98,20 +107,45 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
     setIsLoading(true);
 
     try {
-      const result = await suggestOutfit({
+      const suggestionResult = await suggestOutfit({
         wardrobe,
         occasion: values.occasion,
         weather: values.weather,
         language: language === 'vi' ? 'Vietnamese' : 'English',
+      });
+      
+      const extractedOutfit = await extractOutfitFromText({
+        suggestionText: suggestionResult.suggestion,
+        wardrobe: wardrobe,
       });
 
       const aiMessage: Message = {
         id: `ai-${Date.now()}`,
         sender: "ai",
         text: (
-          <div className="space-y-2">
-            <p className="font-medium">{result.suggestion}</p>
-            <p className="text-sm text-muted-foreground">{result.reasoning}</p>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <p className="font-medium">{suggestionResult.suggestion}</p>
+              <p className="text-sm text-muted-foreground">{suggestionResult.reasoning}</p>
+            </div>
+            {extractedOutfit.items.length > 0 && (
+              <div>
+                <p className="mb-2 text-sm font-semibold">{currentTranslations.suggestedItems}</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {extractedOutfit.items.map((item) => (
+                    <div key={item.id} className="overflow-hidden rounded-md border">
+                       <Image
+                          src={item.photoDataUri}
+                          alt={item.description}
+                          width={100}
+                          height={100}
+                          className="h-full w-full object-cover"
+                        />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         ),
       };
@@ -196,45 +230,48 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
             )}
           </div>
         </ScrollArea>
-
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="mt-2 space-y-3 border-t pt-4"
-          >
-            <div className="grid gap-3 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="occasion"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input placeholder={currentTranslations.occasionPlaceholder} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="weather"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input placeholder={currentTranslations.weatherPlaceholder} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              <Sparkles className="mr-2 h-4 w-4" />
-              {currentTranslations.button}
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
+        </CardContent>
+        <CardFooter>
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="flex w-full flex-col gap-4"
+              >
+                <div className="grid gap-4">
+                  <FormField
+                    control={form.control}
+                    name="occasion"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{currentTranslations.occasion}</FormLabel>
+                        <FormControl>
+                          <Textarea placeholder={currentTranslations.occasionPlaceholder} {...field} rows={2} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="weather"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{currentTranslations.weather}</FormLabel>
+                        <FormControl>
+                          <Textarea placeholder={currentTranslations.weatherPlaceholder} {...field} rows={2} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  {currentTranslations.button}
+                </Button>
+              </form>
+            </Form>
+        </CardFooter>
     </Card>
   );
 }

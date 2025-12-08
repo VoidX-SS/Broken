@@ -65,9 +65,10 @@ export const translations = {
       loading: 'Đang tạo kiểu',
       occasion: 'Dịp',
       weather: 'Thời tiết',
-      occasionPlaceholder: 'ví dụ: Cà phê với bạn bè',
-      weatherPlaceholder: 'ví dụ: Trời nắng ấm',
+      occasionPlaceholder: 'ví dụ: Đi cà phê với bạn bè, đi dự tiệc cưới...',
+      weatherPlaceholder: 'ví dụ: Trời nắng ấm, có gió nhẹ...',
       button: 'Nhận gợi ý',
+      suggestedItems: 'Các món đồ được gợi ý:',
     },
     toast: {
       fileTooLarge: {
@@ -155,9 +156,10 @@ export const translations = {
       loading: 'Styling',
       occasion: 'Occasion',
       weather: 'Weather',
-      occasionPlaceholder: 'e.g., Casual brunch',
-      weatherPlaceholder: 'e.g., Sunny and warm',
+      occasionPlaceholder: 'e.g., Casual brunch with friends, wedding party...',
+      weatherPlaceholder: 'e.g., Sunny and warm, a bit windy...',
       button: 'Get Suggestion',
+      suggestedItems: 'Suggested Items:',
     },
     toast: {
       fileTooLarge: {
