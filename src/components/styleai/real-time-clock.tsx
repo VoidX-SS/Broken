@@ -8,28 +8,45 @@ export function RealTimeClock() {
   const { language } = useLanguage();
 
   useEffect(() => {
+    // Set the initial date only on the client-side
     setDate(new Date());
     const timerId = setInterval(() => setDate(new Date()), 1000);
     return () => clearInterval(timerId);
   }, []);
 
   const formatDate = (date: Date) => {
-    const options: Intl.DateTimeFormatOptions = {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
+    const timeOptions: Intl.DateTimeFormatOptions = {
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
       hour12: false,
     };
+    const dateOptions: Intl.DateTimeFormatOptions = {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+    }
     const locale = language === 'vi' ? 'vi-VN' : 'en-US';
-    return new Intl.DateTimeFormat(locale, options).format(date);
+    
+    const timeString = new Intl.DateTimeFormat(locale, timeOptions).format(date);
+    const dateString = new Intl.DateTimeFormat(locale, dateOptions).format(date);
+
+    if (language === 'vi') {
+        return `${timeString} lúc ${dateString}`;
+    }
+    // For English or other languages
+    return `${dateString}, ${timeString}`;
   };
+
+  // Render a placeholder on the server and initial client render, 
+  // then the actual time once the component has mounted.
+  if (!date) {
+    return <div className="hidden sm:block h-5 w-64" />;
+  }
 
   return (
     <div className="hidden text-sm text-muted-foreground sm:block h-5 w-64">
-      {date ? formatDate(date) : null}
+      {formatDate(date)}
     </div>
   );
 }

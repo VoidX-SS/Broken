@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -56,7 +56,7 @@ interface AddItemDialogProps {
 
 export function AddItemDialog({ onAddItem, open, onOpenChange }: AddItemDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { language, translations } = useLanguage();
@@ -71,26 +71,35 @@ export function AddItemDialog({ onAddItem, open, onOpenChange }: AddItemDialogPr
 
   const photoDataUri = form.watch("photoDataUri");
 
-  const handleGenerateDescription = async (photo: string) => {
+  const handleAnalyzePhoto = async (photo: string) => {
     if (!photo) return;
-    setIsGeneratingDescription(true);
+    setIsGenerating(true);
     try {
       const result = await generateDescriptionForClothingItem({ 
         photoDataUri: photo,
         language: language === 'vi' ? 'Vietnamese' : 'English',
+        categories: [...wardrobeCategories],
       });
       form.setValue("description", result.description, { shouldValidate: true });
+      form.setValue("category", result.category, { shouldValidate: true });
     } catch (error) {
-      console.error("Failed to generate description:", error);
+      console.error("Failed to generate description/category:", error);
       toast({
         variant: "destructive",
         title: translations.toast.genericError.title,
         description: translations.toast.descriptionGenerationError,
       });
     } finally {
-      setIsGeneratingDescription(false);
+      setIsGenerating(false);
     }
   };
+  
+  const handleRegenerate = () => {
+      const currentPhoto = form.getValues("photoDataUri");
+      if(currentPhoto) {
+          handleAnalyzePhoto(currentPhoto);
+      }
+  }
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -107,7 +116,7 @@ export function AddItemDialog({ onAddItem, open, onOpenChange }: AddItemDialogPr
       reader.onloadend = () => {
         const newPhotoDataUri = reader.result as string;
         form.setValue("photoDataUri", newPhotoDataUri, { shouldValidate: true });
-        handleGenerateDescription(newPhotoDataUri);
+        handleAnalyzePhoto(newPhotoDataUri);
       };
       reader.onerror = () => {
         toast({
@@ -188,75 +197,80 @@ export function AddItemDialog({ onAddItem, open, onOpenChange }: AddItemDialogPr
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="category"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{currentTranslations.categoryLabel}</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
+            <div className="relative">
+                 <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    className="absolute -right-2 -top-2 z-10 h-7 w-7 text-primary"
+                    onClick={handleRegenerate}
+                    disabled={isGenerating || !photoDataUri}
+                    aria-label={currentTranslations.generateDescriptionAria}
                   >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={currentTranslations.categoryPlaceholder} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {wardrobeCategories.map((cat) => (
-                        <SelectItem key={cat} value={cat}>
-                          {getCategoryName(cat, language)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    {isGenerating ? (
+                       <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-4 w-4" />
+                    )}
+                </Button>
 
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{currentTranslations.descriptionLabel}</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Input placeholder={currentTranslations.descriptionPlaceholder} {...field} />
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant="ghost"
-                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-primary"
-                        onClick={() => handleGenerateDescription(photoDataUri)}
-                        disabled={isGeneratingDescription || !photoDataUri}
-                        aria-label={currentTranslations.generateDescriptionAria}
-                      >
-                        {isGeneratingDescription ? (
-                           <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Sparkles className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                  </FormControl>
-                  <FormDescription>
+                <div className="space-y-4 rounded-md border bg-muted/20 p-4">
+                    <FormField
+                      control={form.control}
+                      name="category"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{currentTranslations.categoryLabel}</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            disabled={isGenerating}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder={currentTranslations.categoryPlaceholder} />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {wardrobeCategories.map((cat) => (
+                                <SelectItem key={cat} value={cat}>
+                                  {getCategoryName(cat, language)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{currentTranslations.descriptionLabel}</FormLabel>
+                          <FormControl>
+                              <Input placeholder={currentTranslations.descriptionPlaceholder} {...field} disabled={isGenerating} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                </div>
+                 <FormDescription className="mt-2 text-right">
                     {currentTranslations.descriptionHint}
                   </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            </div>
+
 
             <DialogFooter className="pt-4">
               <Button
                 type="submit"
-                disabled={isSubmitting || isGeneratingDescription}
+                disabled={isSubmitting || isGenerating}
                 className="w-full sm:w-auto"
               >
-                {(isSubmitting || isGeneratingDescription) && (
+                {(isSubmitting || isGenerating) && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
                 {currentTranslations.submitButton}
