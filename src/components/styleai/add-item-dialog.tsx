@@ -35,8 +35,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { WardrobeItem, WardrobeCategory } from "@/lib/types";
-import { wardrobeCategories } from "@/lib/types";
+import { wardrobeCategories, getCategoryName } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/context/language-context";
 
 const formSchema = z.object({
   photoDataUri: z.string().min(1, "Please upload an image."),
@@ -58,6 +59,7 @@ export function AddItemDialog({ children, onAddItem, open, onOpenChange }: AddIt
   const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { language, translations } = useLanguage();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -75,8 +77,8 @@ export function AddItemDialog({ children, onAddItem, open, onOpenChange }: AddIt
       if (file.size > 4 * 1024 * 1024) { // 4MB limit
         toast({
           variant: "destructive",
-          title: "File too large",
-          description: "Please upload an image smaller than 4MB.",
+          title: translations.toast.fileTooLarge.title,
+          description: translations.toast.fileTooLarge.description,
         });
         return;
       }
@@ -87,8 +89,8 @@ export function AddItemDialog({ children, onAddItem, open, onOpenChange }: AddIt
       reader.onerror = () => {
         toast({
           variant: "destructive",
-          title: "Error reading file",
-          description: "Could not read the selected image. Please try another.",
+          title: translations.toast.fileReadError.title,
+          description: translations.toast.fileReadError.description,
         });
       };
       reader.readAsDataURL(file);
@@ -99,14 +101,17 @@ export function AddItemDialog({ children, onAddItem, open, onOpenChange }: AddIt
     if (!photoDataUri) return;
     setIsGeneratingDescription(true);
     try {
-      const result = await generateDescriptionForClothingItem({ photoDataUri });
+      const result = await generateDescriptionForClothingItem({ 
+        photoDataUri,
+        language: language === 'vi' ? 'Vietnamese' : 'English',
+      });
       form.setValue("description", result.description, { shouldValidate: true });
     } catch (error) {
       console.error("Failed to generate description:", error);
       toast({
         variant: "destructive",
-        title: "Oh no!",
-        description: "Could not generate a description for the image. Please write one manually.",
+        title: translations.toast.genericError.title,
+        description: translations.toast.descriptionGenerationError,
       });
     } finally {
       setIsGeneratingDescription(false);
@@ -118,7 +123,7 @@ export function AddItemDialog({ children, onAddItem, open, onOpenChange }: AddIt
       handleGenerateDescription();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [photoDataUri]);
+  }, [photoDataUri, language]);
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
@@ -130,6 +135,8 @@ export function AddItemDialog({ children, onAddItem, open, onOpenChange }: AddIt
     setIsSubmitting(false);
     form.reset();
   };
+  
+  const currentTranslations = translations.addItemDialog;
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => {
@@ -138,9 +145,9 @@ export function AddItemDialog({ children, onAddItem, open, onOpenChange }: AddIt
     }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add to Wardrobe</DialogTitle>
+          <DialogTitle>{currentTranslations.title}</DialogTitle>
           <DialogDescription>
-            Upload a picture of your clothing item. The AI will generate a description for you.
+            {currentTranslations.description}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -150,7 +157,7 @@ export function AddItemDialog({ children, onAddItem, open, onOpenChange }: AddIt
               name="photoDataUri"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Photo</FormLabel>
+                  <FormLabel>{currentTranslations.photoLabel}</FormLabel>
                   <FormControl>
                     <div
                       className="relative flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 p-6 text-center transition hover:border-primary/80 hover:bg-muted/40"
@@ -166,7 +173,7 @@ export function AddItemDialog({ children, onAddItem, open, onOpenChange }: AddIt
                       {photoDataUri ? (
                         <Image
                           src={photoDataUri}
-                          alt="Preview of uploaded item"
+                          alt={currentTranslations.photoAlt}
                           width={100}
                           height={100}
                           className="h-24 w-24 rounded-md object-cover"
@@ -175,10 +182,10 @@ export function AddItemDialog({ children, onAddItem, open, onOpenChange }: AddIt
                         <>
                           <UploadCloud className="h-10 w-10 text-muted-foreground" />
                           <p className="text-sm text-muted-foreground">
-                            Click to upload or drag & drop
+                            {currentTranslations.uploadHint}
                           </p>
                           <p className="text-xs text-muted-foreground/80">
-                            PNG, JPG, WEBP up to 4MB
+                            {currentTranslations.uploadLimit}
                           </p>
                         </>
                       )}
@@ -194,20 +201,20 @@ export function AddItemDialog({ children, onAddItem, open, onOpenChange }: AddIt
               name="category"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Category</FormLabel>
+                  <FormLabel>{currentTranslations.categoryLabel}</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     value={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a category" />
+                        <SelectValue placeholder={currentTranslations.categoryPlaceholder} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {wardrobeCategories.map((cat) => (
                         <SelectItem key={cat} value={cat}>
-                          {cat}
+                          {getCategoryName(cat, language)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -222,10 +229,10 @@ export function AddItemDialog({ children, onAddItem, open, onOpenChange }: AddIt
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>{currentTranslations.descriptionLabel}</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <Input placeholder="e.g., Blue denim jacket" {...field} />
+                      <Input placeholder={currentTranslations.descriptionPlaceholder} {...field} />
                       <Button
                         type="button"
                         size="icon"
@@ -233,7 +240,7 @@ export function AddItemDialog({ children, onAddItem, open, onOpenChange }: AddIt
                         className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-primary"
                         onClick={handleGenerateDescription}
                         disabled={isGeneratingDescription || !photoDataUri}
-                        aria-label="Generate description"
+                        aria-label={currentTranslations.generateDescriptionAria}
                       >
                         {isGeneratingDescription ? (
                            <Loader2 className="h-4 w-4 animate-spin" />
@@ -244,7 +251,7 @@ export function AddItemDialog({ children, onAddItem, open, onOpenChange }: AddIt
                     </div>
                   </FormControl>
                   <FormDescription>
-                    The AI will generate this automatically. You can edit it if needed.
+                    {currentTranslations.descriptionHint}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -260,7 +267,7 @@ export function AddItemDialog({ children, onAddItem, open, onOpenChange }: AddIt
                 {(isSubmitting || isGeneratingDescription) && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                Add Item
+                {currentTranslations.submitButton}
               </Button>
             </DialogFooter>
           </form>

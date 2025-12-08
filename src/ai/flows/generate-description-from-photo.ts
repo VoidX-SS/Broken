@@ -16,6 +16,7 @@ const GenerateDescriptionInputSchema = z.object({
     .describe(
       "A photo of a clothing item, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
     ),
+  language: z.string().describe('The language for the AI to respond in (e.g., "English", "Vietnamese").'),
 });
 export type GenerateDescriptionInput = z.infer<typeof GenerateDescriptionInputSchema>;
 
@@ -34,6 +35,7 @@ const prompt = ai.definePrompt({
   input: {schema: GenerateDescriptionInputSchema},
   output: {schema: GenerateDescriptionOutputSchema},
   prompt: `You are an expert fashion cataloger. Analyze the provided image of a clothing item and generate a concise, descriptive summary. The description should include the item's color, style, and type.
+Respond in the following language: {{{language}}}.
 
 For example, if the image shows a blue dress with a floral pattern, a good description would be "Blue floral print summer dress". If it's a black jacket, "Black leather biker jacket".
 

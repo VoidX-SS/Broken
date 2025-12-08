@@ -26,6 +26,7 @@ const SuggestOutfitInputSchema = z.object({
     .describe('The user wardrobe, represented as an array of clothing items.'),
   occasion: z.string().describe('The occasion for which the outfit is being suggested.'),
   weather: z.string().describe('The current weather conditions.'),
+  language: z.string().describe('The language for the AI to respond in (e.g., "English", "Vietnamese").'),
 });
 export type SuggestOutfitInput = z.infer<typeof SuggestOutfitInputSchema>;
 
@@ -43,7 +44,19 @@ const prompt = ai.definePrompt({
   name: 'suggestOutfitPrompt',
   input: {schema: SuggestOutfitInputSchema},
   output: {schema: SuggestOutfitOutputSchema},
-  prompt: `You are a personal stylist. Given a user's wardrobe, the occasion, and the weather, suggest an outfit from their wardrobe and explain your reasoning.\n\nWardrobe:\n{{#each wardrobe}}\n- Category: {{{category}}}, Description: {{{description}}}, Photo: {{media url=photoDataUri}}\n{{/each}}\n\nOccasion: {{{occasion}}}\nWeather: {{{weather}}}\n\nSuggestion: \nReasoning: `,
+  prompt: `You are a personal stylist. Given a user's wardrobe, the occasion, and the weather, suggest an outfit from their wardrobe and explain your reasoning.
+Respond in the following language: {{{language}}}.
+
+Wardrobe:
+{{#each wardrobe}}
+- Category: {{{category}}}, Description: {{{description}}}, Photo: {{media url=photoDataUri}}
+{{/each}}
+
+Occasion: {{{occasion}}}
+Weather: {{{weather}}}
+
+Suggestion: 
+Reasoning: `,
 });
 
 const suggestOutfitFlow = ai.defineFlow(

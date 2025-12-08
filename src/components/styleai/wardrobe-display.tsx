@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Plus } from "lucide-react";
 import type { WardrobeItem } from "@/lib/types";
+import { useLanguage } from "@/context/language-context";
 import { Button } from "@/components/ui/button";
 import { WardrobeItemCard } from "@/components/styleai/wardrobe-item-card";
 import { AddItemDialog } from "@/components/styleai/add-item-dialog";
@@ -20,11 +21,13 @@ export function WardrobeDisplay({
   onDeleteItem,
 }: WardrobeDisplayProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { translations } = useLanguage();
+  const currentTranslations = translations.wardrobeDisplay;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold tracking-tight">My Wardrobe</h2>
+        <h2 className="text-2xl font-bold tracking-tight">{currentTranslations.title}</h2>
         <AddItemDialog
           open={isDialogOpen}
           onOpenChange={setIsDialogOpen}
@@ -35,7 +38,7 @@ export function WardrobeDisplay({
         >
           <Button>
             <Plus className="-ml-1 mr-2 h-4 w-4" />
-            Add Item
+            {currentTranslations.button}
           </Button>
         </AddItemDialog>
       </div>

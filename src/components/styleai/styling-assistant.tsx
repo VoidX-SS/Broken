@@ -10,6 +10,7 @@ import { suggestOutfit } from "@/ai/flows/suggest-outfit-from-wardrobe";
 import type { WardrobeItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/context/language-context";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,16 +41,29 @@ type Message = {
 };
 
 export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
+  const { language, translations } = useLanguage();
+  const currentTranslations = translations.stylingAssistant;
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "initial",
       sender: "ai",
-      text: "Hello! Tell me the occasion and weather, and I'll suggest an outfit from your wardrobe.",
+      text: currentTranslations.initialMessage,
     },
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMessages([
+      {
+        id: "initial",
+        sender: "ai",
+        text: currentTranslations.initialMessage,
+      },
+    ]);
+  }, [currentTranslations.initialMessage]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -69,9 +83,8 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
     if (wardrobe.length === 0) {
       toast({
         variant: "destructive",
-        title: "Empty Wardrobe",
-        description:
-          "Please add some items to your wardrobe before asking for suggestions.",
+        title: translations.toast.emptyWardrobe.title,
+        description: translations.toast.emptyWardrobe.description,
       });
       return;
     }
@@ -79,7 +92,7 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
     const userMessage: Message = {
       id: `user-${Date.now()}`,
       sender: "user",
-      text: `Occasion: ${values.occasion}, Weather: ${values.weather}`,
+      text: `${currentTranslations.occasion}: ${values.occasion}, ${currentTranslations.weather}: ${values.weather}`,
     };
     setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
@@ -89,6 +102,7 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
         wardrobe,
         occasion: values.occasion,
         weather: values.weather,
+        language: language === 'vi' ? 'Vietnamese' : 'English',
       });
 
       const aiMessage: Message = {
@@ -106,14 +120,13 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
       console.error("AI suggestion failed:", error);
       toast({
         variant: "destructive",
-        title: "Oh no!",
-        description:
-          "I couldn't come up with a suggestion. Please try again.",
+        title: translations.toast.genericError.title,
+        description: translations.toast.suggestionError,
       });
       const errorMessage: Message = {
         id: `error-${Date.now()}`,
         sender: 'ai',
-        text: "Sorry, I had trouble thinking of an outfit. Please try again."
+        text: translations.toast.suggestionError,
       }
       setMessages((prev) => [...prev, errorMessage]);
 
@@ -127,7 +140,7 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
     <Card className="flex h-[75vh] flex-col">
       <CardHeader className="flex-row items-center gap-3 space-y-0">
         <Sparkles className="h-6 w-6 text-primary" />
-        <CardTitle>AI Styling Assistant</CardTitle>
+        <CardTitle>{currentTranslations.title}</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col gap-4 overflow-hidden">
         <ScrollArea className="flex-1 pr-4" ref={scrollAreaRef}>
@@ -176,7 +189,7 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
                 <div className="flex items-center space-x-2 rounded-lg bg-muted px-4 py-3">
                   <Loader2 className="h-5 w-5 animate-spin text-primary" />
                   <span className="text-sm text-muted-foreground">
-                    Styling...
+                    {currentTranslations.loading}...
                   </span>
                 </div>
               </div>
@@ -196,7 +209,7 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
-                      <Input placeholder="e.g., Casual brunch" {...field} />
+                      <Input placeholder={currentTranslations.occasionPlaceholder} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -208,7 +221,7 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
-                      <Input placeholder="e.g., Sunny and warm" {...field} />
+                      <Input placeholder={currentTranslations.weatherPlaceholder} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -217,7 +230,7 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
               <Sparkles className="mr-2 h-4 w-4" />
-              Get Suggestion
+              {currentTranslations.button}
             </Button>
           </form>
         </Form>

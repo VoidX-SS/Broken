@@ -2,14 +2,12 @@
 
 import Image from "next/image";
 import { Trash2 } from "lucide-react";
+import { useLanguage } from "@/context/language-context";
 import type { WardrobeItem } from "@/lib/types";
+import { getCategoryName } from "@/lib/types";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,6 +29,9 @@ interface WardrobeItemCardProps {
 }
 
 export function WardrobeItemCard({ item, onDelete }: WardrobeItemCardProps) {
+  const { language, translations } = useLanguage();
+  const currentTranslations = translations.deleteDialog;
+
   return (
     <Card className="group relative overflow-hidden transition-all duration-300 hover:shadow-xl">
       <AlertDialog>
@@ -39,23 +40,22 @@ export function WardrobeItemCard({ item, onDelete }: WardrobeItemCardProps) {
             variant="destructive"
             size="icon"
             className="absolute right-2 top-2 z-10 h-7 w-7 scale-90 opacity-0 transition-all group-hover:scale-100 group-hover:opacity-100"
-            aria-label="Delete item"
+            aria-label={currentTranslations.ariaLabel}
           >
             <Trash2 className="h-4 w-4" />
           </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>{currentTranslations.title}</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete this
-              item from your wardrobe.
+              {currentTranslations.description}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{currentTranslations.cancel}</AlertDialogCancel>
             <AlertDialogAction onClick={() => onDelete(item.id)}>
-              Delete
+              {currentTranslations.confirm}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -73,7 +73,7 @@ export function WardrobeItemCard({ item, onDelete }: WardrobeItemCardProps) {
         </div>
       </CardContent>
       <div className="p-4">
-        <Badge variant="secondary" className="mb-2">{item.category}</Badge>
+        <Badge variant="secondary" className="mb-2">{getCategoryName(item.category, language)}</Badge>
         <p className="truncate text-sm font-medium">{item.description}</p>
       </div>
     </Card>
