@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
@@ -71,38 +72,12 @@ export function AddItemDialog({ children, onAddItem, open, onOpenChange }: AddIt
 
   const photoDataUri = form.watch("photoDataUri");
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (file.size > 4 * 1024 * 1024) { // 4MB limit
-        toast({
-          variant: "destructive",
-          title: translations.toast.fileTooLarge.title,
-          description: translations.toast.fileTooLarge.description,
-        });
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        form.setValue("photoDataUri", reader.result as string, { shouldValidate: true });
-      };
-      reader.onerror = () => {
-        toast({
-          variant: "destructive",
-          title: translations.toast.fileReadError.title,
-          description: translations.toast.fileReadError.description,
-        });
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleGenerateDescription = async () => {
-    if (!photoDataUri) return;
+  const handleGenerateDescription = async (photo: string) => {
+    if (!photo) return;
     setIsGeneratingDescription(true);
     try {
       const result = await generateDescriptionForClothingItem({ 
-        photoDataUri,
+        photoDataUri: photo,
         language: language === 'vi' ? 'Vietnamese' : 'English',
       });
       form.setValue("description", result.description, { shouldValidate: true });
@@ -118,12 +93,33 @@ export function AddItemDialog({ children, onAddItem, open, onOpenChange }: AddIt
     }
   };
 
-  useEffect(() => {
-    if (photoDataUri) {
-      handleGenerateDescription();
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.size > 4 * 1024 * 1024) { // 4MB limit
+        toast({
+          variant: "destructive",
+          title: translations.toast.fileTooLarge.title,
+          description: translations.toast.fileTooLarge.description,
+        });
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const newPhotoDataUri = reader.result as string;
+        form.setValue("photoDataUri", newPhotoDataUri, { shouldValidate: true });
+        handleGenerateDescription(newPhotoDataUri);
+      };
+      reader.onerror = () => {
+        toast({
+          variant: "destructive",
+          title: translations.toast.fileReadError.title,
+          description: translations.toast.fileReadError.description,
+        });
+      };
+      reader.readAsDataURL(file);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [photoDataUri, language]);
+  };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
@@ -235,7 +231,7 @@ export function AddItemDialog({ children, onAddItem, open, onOpenChange }: AddIt
                         size="icon"
                         variant="ghost"
                         className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-primary"
-                        onClick={handleGenerateDescription}
+                        onClick={() => handleGenerateDescription(photoDataUri)}
                         disabled={isGeneratingDescription || !photoDataUri}
                         aria-label={currentTranslations.generateDescriptionAria}
                       >
