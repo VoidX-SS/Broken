@@ -1,10 +1,177 @@
+/**
+ * This ruleset enforces a strict user-ownership model for the StyleAI application.
+ * All user-generated content, such as clothing items and outfit suggestions, is
+ * stored in private subcollections, ensuring that only the data owner can access or
+ * modify their information.
+ *
+ * Core Philosophy:
+ * The security model is built on the principle of least privilege. Each user has
+ * exclusive control over a dedicated data tree, identified by their unique Firebase
+ * Authentication UID. Access to any document requires the requesting user's UID to
+ * match the user ID in the document's path.
+ *
+ * Data Structure:
+ * Data is organized hierarchically under the `/userProfiles/{userProfileId}` path.
+ * Each user's `clothingItems` and `outfitSuggestions` are stored in nested
+ * subcollections. This structure leverages Firestore's path-based security to create
+ * a secure and performant authorization system without needing complex queries or
+ * cross-document reads (`get()` calls) in the rules.
+ *
+ * Key Security Decisions:
+ * - User Listing Disabled: To protect user privacy and prevent enumeration attacks,
+ *   listing the top-level `/userProfiles` collection is explicitly forbidden. Users can
+ *   only fetch their own profile via a direct `get` request.
+ * - Strict Ownership: All readable and writable data (profiles, clothing, suggestions)
+ *   is strictly owned. There is no public or shared data in this model.
+ * - Relational Integrity: On document creation, rules validate that an internal ID
+ *   field (e.g., `userProfileId`) matches the user ID in the path. On update, these
+ *   ownership fields are enforced as immutable to prevent re-association.
+ * - Default Deny: Any operation not explicitly granted is denied.
+ *
+ * Denormalization for Authorization:
+ * This ruleset relies on path-based authorization. The user's UID is part of the
+ * document path for all their private data (e.g., `/userProfiles/{userId}/...`). This
+ * is the most performant way to check for ownership, as it avoids `get` calls.
+ * Furthermore, we enforce that documents within these subcollections contain a
+ * denormalized `userProfileId` field, which is validated against the path to ensure
+ * data consistency and prevent misconfiguration.
+ *
+ * Structural Segregation:
+ * The design uses separate collections for each type of user-owned data
+ * (`clothingItems`, `outfitSuggestions`). This segregation simplifies rules and ensures
+ * that queries for one type of data cannot inadvertently access another, enhancing
+ * security and query performance.
+ */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow read and write access to the wardrobe collection for all users.
-    // For a production app, you should implement authentication and restrict access.
-    match /wardrobe/{itemId} {
-      allow read, write: if true;
+
+    // --------------------------------------------------------------------
+    // Helper Functions
+    // --------------------------------------------------------------------
+
+    /**
+     * Checks if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the currently authenticated user's UID matches the provided userId.
+     * This is the primary function for verifying document ownership.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Checks if the document being written to already exists.
+     * Crucial for protecting update and delete operations.
+     */
+    function isExistingDoc() {
+      return resource != null;
+    }
+
+    /**
+     * Combines ownership and existence checks.
+     * Used for all update and delete operations to ensure the user owns the
+     * document they are trying to modify or remove.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && isExistingDoc();
+    }
+
+    /**
+     * Validates that the 'id' field of a new UserProfile document matches the
+     * document's ID (which is the user's UID).
+     * Enforces relational integrity on create.
+     */
+    function hasValidUserProfileDataOnCreate(userProfileId) {
+      return request.resource.data.id == userProfileId;
+    }
+
+    /**
+     * Enforces that the 'id' field of a UserProfile document is immutable.
+     * This prevents changing the core identifier of a user profile after creation.
+     */
+    function isUserProfileIdImmutable() {
+      return request.resource.data.id == resource.data.id;
+    }
+
+    /**
+     * Validates that the 'userProfileId' field of a new subcollection document
+     * (e.g., ClothingItem) matches the owner's UID from the path.
+     * Enforces the ownership link on create.
+     */
+    function hasValidChildDataOnCreate(userProfileId) {
+      return request.resource.data.userProfileId == userProfileId;
+    }
+
+    /**
+     * Enforces that the 'userProfileId' field within a subcollection document
+     * is immutable, preventing an item from being reassigned to another user.
+     */
+    function isChildUserProfileIdImmutable() {
+      return request.resource.data.userProfileId == resource.data.userProfileId;
+    }
+
+    // --------------------------------------------------------------------
+    // Collection Rules
+    // --------------------------------------------------------------------
+
+    /**
+     * @description Manages user profile documents. A user can create, read, update,
+     *   and delete their own profile. Listing all user profiles is disallowed.
+     * @path /userProfiles/{userProfileId}
+     * @allow (get) An authenticated user with UID 'user123' can read their own profile at `/userProfiles/user123`.
+     * @allow (create) A new user with UID 'user123' can create their profile at `/userProfiles/user123`.
+     * @deny (list) No user, authenticated or not, can list the `/userProfiles` collection.
+     * @deny (update) User 'user456' cannot update the profile of user 'user123'.
+     * @principle Restricts access to a user's own data tree and prevents user enumeration.
+     */
+    match /userProfiles/{userProfileId} {
+      allow get: if isOwner(userProfileId);
+      allow list: if false;
+      allow create: if isOwner(userProfileId) && hasValidUserProfileDataOnCreate(userProfileId);
+      allow update: if isExistingOwner(userProfileId) && isUserProfileIdImmutable();
+      allow delete: if isExistingOwner(userProfileId);
+
+      /**
+       * @description Secures a user's private collection of clothing items.
+       *   Only the owner can manage their own items.
+       * @path /userProfiles/{userProfileId}/clothingItems/{clothingItemId}
+       * @allow (create) User 'user123' can create a new clothing item document in their own subcollection.
+       * @allow (list) User 'user123' can list all documents in their `/clothingItems` subcollection.
+       * @deny (get) User 'user456' cannot read a clothing item from user 'user123's collection.
+       * @deny (delete) User 'user123' cannot delete an item from user 'user456's collection.
+       * @principle Enforces strict data ownership within a user-specific subcollection.
+       */
+      match /clothingItems/{clothingItemId} {
+        allow get: if isOwner(userProfileId);
+        allow list: if isOwner(userProfileId);
+        allow create: if isOwner(userProfileId) && hasValidChildDataOnCreate(userProfileId);
+        allow update: if isExistingOwner(userProfileId) && isChildUserProfileIdImmutable();
+        allow delete: if isExistingOwner(userProfileId);
+      }
+
+      /**
+       * @description Secures AI-generated outfit suggestions for a user.
+       *   Only the user can view or manage their suggestions.
+       * @path /userProfiles/{userProfileId}/outfitSuggestions/{outfitSuggestionId}
+       * @allow (get) User 'user123' can read a suggestion at `/userProfiles/user123/outfitSuggestions/suggestionABC`.
+       * @allow (list) User 'user123' can list all documents in their `/outfitSuggestions` subcollection.
+       * @deny (create) User 'user456' cannot create an outfit suggestion for user 'user123'.
+       * @deny (update) User 'user123' cannot update a suggestion belonging to user 'user456'.
+       * @principle Enforces strict data ownership within a user-specific subcollection.
+       */
+      match /outfitSuggestions/{outfitSuggestionId} {
+        allow get: if isOwner(userProfileId);
+        allow list: if isOwner(userProfileId);
+        allow create: if isOwner(userProfileId) && hasValidChildDataOnCreate(userProfileId);
+        allow update: if isExistingOwner(userProfileId) && isChildUserProfileIdImmutable();
+        allow delete: if isExistingOwner(userProfileId);
+      }
     }
   }
 }
