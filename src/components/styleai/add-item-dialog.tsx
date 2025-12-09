@@ -39,6 +39,7 @@ import type { WardrobeItem } from "@/lib/types";
 import { wardrobeCategories, getCategoryName } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/context/language-context";
+import { useApiKey } from "@/context/api-key-context";
 
 const formSchema = z.object({
   photoDataUri: z.string().min(1, "Please upload an image."),
@@ -64,6 +65,7 @@ export function AddItemDialog({ mode, onSave, open, onOpenChange, initialData }:
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { language, translations } = useLanguage();
+  const { apiKey } = useApiKey();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -81,6 +83,7 @@ export function AddItemDialog({ mode, onSave, open, onOpenChange, initialData }:
         form.reset({
           photoDataUri: "",
           description: "",
+          category: undefined,
         });
       }
     }
@@ -90,12 +93,21 @@ export function AddItemDialog({ mode, onSave, open, onOpenChange, initialData }:
 
   const handleAnalyzePhoto = async (photo: string) => {
     if (!photo) return;
+     if (!apiKey) {
+      toast({
+        variant: "destructive",
+        title: "API Key Required",
+        description: "Please set your Google AI API key in the settings.",
+      });
+      return;
+    }
     setIsGenerating(true);
     try {
       const result = await generateDescriptionForClothingItem({ 
         photoDataUri: photo,
         language: language === 'vi' ? 'Vietnamese' : 'English',
         categories: [...wardrobeCategories],
+        apiKey: apiKey,
       });
       form.setValue("description", result.description, { shouldValidate: true });
       form.setValue("category", result.category, { shouldValidate: true });

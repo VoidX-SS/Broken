@@ -7,7 +7,7 @@
  * - SuggestOutfitOutput - The return type for the suggestOutfit function.
  */
 
-import {ai} from '@/ai/genkit';
+import {ai, getConfig} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const SuggestOutfitInputSchema = z.object({
@@ -29,6 +29,7 @@ const SuggestOutfitInputSchema = z.object({
   gender: z.enum(['male', 'female']).describe('The gender for which the outfit is being suggested.'),
   style: z.string().describe('The desired style for the outfit (e.g., casual, formal, chic).'),
   language: z.string().describe('The language for the AI to respond in (e.g., "English", "Vietnamese").'),
+  apiKey: z.string().optional().describe('The Google AI API key.'),
 });
 export type SuggestOutfitInput = z.infer<typeof SuggestOutfitInputSchema>;
 
@@ -70,7 +71,7 @@ const suggestOutfitFlow = ai.defineFlow(
     outputSchema: SuggestOutfitOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
+    const {output} = await prompt(input, { config: getConfig(input.apiKey) });
     return output!;
   }
 );

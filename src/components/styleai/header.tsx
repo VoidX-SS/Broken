@@ -2,25 +2,13 @@
 "use client";
 
 import { Settings } from "lucide-react";
-import { useLanguage, type Language } from "@/context/language-context";
 import { RealTimeClock } from "@/components/styleai/real-time-clock";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { SettingsDialog } from "./settings-dialog";
+import { useState } from "react";
 
 export function AppHeader() {
-  const { language, setLanguage, translations } = useLanguage();
-
-  const handleLanguageChange = (lang: string) => {
-    setLanguage(lang as Language);
-  };
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   return (
     <header className="border-b">
@@ -32,25 +20,11 @@ export function AppHeader() {
         </div>
         <div className="flex items-center gap-4">
           <RealTimeClock />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon">
-                <Settings className="h-5 w-5" />
-                <span className="sr-only">Settings</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-48" align="end">
-              <DropdownMenuLabel>{translations.settings.language}</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuRadioGroup
-                value={language}
-                onValueChange={handleLanguageChange}
-              >
-                <DropdownMenuRadioItem value="vi">Tiếng Việt</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="en">English</DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button variant="outline" size="icon" onClick={() => setIsSettingsOpen(true)}>
+            <Settings className="h-5 w-5" />
+            <span className="sr-only">Settings</span>
+          </Button>
+          <SettingsDialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
         </div>
       </div>
     </header>

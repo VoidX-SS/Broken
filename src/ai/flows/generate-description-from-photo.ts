@@ -7,7 +7,7 @@
  * - GenerateDescriptionOutput - The return type for the generateDescriptionForClothingItem function.
  */
 
-import {ai} from '@/ai/genkit';
+import {ai, getConfig} from '@/ai/genkit';
 import {z} from 'genkit';
 import { wardrobeCategories } from '@/lib/types';
 
@@ -19,6 +19,7 @@ const GenerateDescriptionInputSchema = z.object({
     ),
   language: z.string().describe('The language for the AI to respond in (e.g., "English", "Vietnamese").'),
   categories: z.array(z.string()).describe('A list of valid clothing categories to choose from.'),
+  apiKey: z.string().optional().describe('The Google AI API key.'),
 });
 export type GenerateDescriptionInput = z.infer<typeof GenerateDescriptionInputSchema>;
 
@@ -55,7 +56,7 @@ const generateDescriptionFlow = ai.defineFlow(
     outputSchema: GenerateDescriptionOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
+    const {output} = await prompt(input, { config: getConfig(input.apiKey) });
     return output!;
   }
 );

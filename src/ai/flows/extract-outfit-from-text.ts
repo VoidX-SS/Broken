@@ -7,7 +7,7 @@
  * - ExtractOutfitOutput - The return type for the extractOutfitFromText function.
  */
 
-import {ai} from '@/ai/genkit';
+import {ai, getConfig} from '@/ai/genkit';
 import {z} from 'genkit';
 import type { WardrobeItem } from '@/lib/types';
 
@@ -21,6 +21,7 @@ const WardrobeItemSchema = z.object({
 const ExtractOutfitInputSchema = z.object({
   suggestionText: z.string().describe('The natural language text of the outfit suggestion.'),
   wardrobe: z.array(WardrobeItemSchema).describe('The full list of available wardrobe items.'),
+  apiKey: z.string().optional().describe('The Google AI API key.'),
 });
 export type ExtractOutfitInput = z.infer<typeof ExtractOutfitInputSchema>;
 
@@ -40,12 +41,15 @@ export async function extractOutfitFromText(input: ExtractOutfitInput): Promise<
 
   // The LLM only returns the IDs and descriptions. We need to find the full items from the original wardrobe list.
   const foundItems: WardrobeItem[] = [];
-  for (const extractedItem of llmOut.items) {
-    const found = input.wardrobe.find(wardrobeItem => wardrobeItem.id === extractedItem.id);
-    if (found) {
-      foundItems.push(found);
+  if (llmOut && llmOut.items) {
+    for (const extractedItem of llmOut.items) {
+        const found = input.wardrobe.find(wardrobeItem => wardrobeItem.id === extractedItem.id);
+        if (found) {
+        foundItems.push(found);
+        }
     }
   }
+
 
   return { items: foundItems };
 }
@@ -76,7 +80,7 @@ const extractOutfitFlow = ai.defineFlow(
     outputSchema: ExtractOutfitOutputSchema,
   },
   async (input) => {
-    const {output} = await prompt(input);
+    const {output} = await prompt(input, { config: getConfig(input.apiKey) });
     return output!;
   }
 );

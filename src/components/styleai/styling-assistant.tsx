@@ -14,6 +14,7 @@ import type { WardrobeItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/context/language-context";
+import { useApiKey } from "@/context/api-key-context";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -58,6 +59,7 @@ type Message = {
 export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
   const { language, translations } = useLanguage();
   const currentTranslations = translations.stylingAssistant;
+  const { apiKey } = useApiKey();
   
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -85,7 +87,7 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: { occasion: "", weather: "", style: "" },
+    defaultValues: { occasion: "", weather: "", style: "", gender: undefined },
   });
 
   useEffect(() => {
@@ -151,6 +153,14 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
       });
       return;
     }
+     if (!apiKey) {
+      toast({
+        variant: "destructive",
+        title: "API Key Required",
+        description: "Please set your Google AI API key in the settings.",
+      });
+      return;
+    }
 
     const userMessageText = `
       ${currentTranslations.gender}: ${values.gender === 'male' ? currentTranslations.male : currentTranslations.female}, 
@@ -175,14 +185,19 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
         gender: values.gender,
         style: values.style,
         language: language === 'vi' ? 'Vietnamese' : 'English',
+        apiKey: apiKey,
       });
       
       const [extractedOutfit, speechResult] = await Promise.all([
         extractOutfitFromText({
           suggestionText: suggestionResult.suggestion,
           wardrobe: wardrobe,
+          apiKey: apiKey,
         }),
-        generateSpeechFromText(suggestionResult.suggestion),
+        generateSpeechFromText({
+          text: suggestionResult.suggestion,
+          apiKey: apiKey,
+        }),
       ]);
 
 
@@ -234,7 +249,7 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
 
     } finally {
       setIsLoading(false);
-      form.reset();
+      form.reset({ occasion: "", weather: "", style: "", gender: values.gender });
     }
   }
 
@@ -323,7 +338,7 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>{currentTranslations.gender}</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder={currentTranslations.genderPlaceholder} />

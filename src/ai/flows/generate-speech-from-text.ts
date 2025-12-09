@@ -6,19 +6,26 @@
  * - GenerateSpeechOutput - The return type for the generateSpeechFromText function.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai, getConfig } from '@/ai/genkit';
 import { z } from 'genkit';
 import { googleAI } from '@genkit-ai/google-genai';
 import wav from 'wav';
 
 export type GenerateSpeechOutput = z.infer<typeof GenerateSpeechOutputSchema>;
+export type GenerateSpeechInput = z.infer<typeof GenerateSpeechInputSchema>;
 
 // Export the main function
 export async function generateSpeechFromText(
-  text: string
+  input: GenerateSpeechInput
 ): Promise<GenerateSpeechOutput> {
-  return generateSpeechFlow(text);
+  return generateSpeechFlow(input);
 }
+
+const GenerateSpeechInputSchema = z.object({
+    text: z.string(),
+    apiKey: z.string().optional(),
+});
+
 
 // Schemas are defined inside, not exported
 const GenerateSpeechOutputSchema = z.object({
@@ -57,10 +64,10 @@ async function toWav(
 const generateSpeechFlow = ai.defineFlow(
   {
     name: 'generateSpeechFlow',
-    inputSchema: z.string(),
+    inputSchema: GenerateSpeechInputSchema,
     outputSchema: GenerateSpeechOutputSchema,
   },
-  async (text) => {
+  async ({ text, apiKey }) => {
     if (!text.trim()) {
       return { audio: undefined };
     }
@@ -69,6 +76,7 @@ const generateSpeechFlow = ai.defineFlow(
       const { media } = await ai.generate({
         model: googleAI.model('gemini-2.5-flash-preview-tts'),
         config: {
+          ...getConfig(apiKey)?.config,
           responseModalities: ['AUDIO'],
           speechConfig: {
             voiceConfig: {
