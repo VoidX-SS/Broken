@@ -3,7 +3,7 @@
  * It uses the @genkit-ai/next plugin to create a handler that exposes the Genkit flows.
  */
 
-import { createApiHandler } from '@genkit-ai/next';
+import { POST } from '@genkit-ai/next/server';
 import '@/ai'; // Import flows to register them with Genkit
 
-export const POST = createApiHandler();
+export { POST };
