@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -48,26 +48,43 @@ const formSchema = z.object({
   }),
 });
 
+type FormValues = z.infer<typeof formSchema>;
+
 interface AddItemDialogProps {
-  onAddItem: (item: Omit<WardrobeItem, 'id'>) => void;
+  mode: 'add' | 'edit';
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSave: (item: Omit<WardrobeItem, 'id'>) => void;
+  initialData?: WardrobeItem;
 }
 
-export function AddItemDialog({ onAddItem, open, onOpenChange }: AddItemDialogProps) {
+export function AddItemDialog({ mode, onSave, open, onOpenChange, initialData }: AddItemDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { language, translations } = useLanguage();
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      photoDataUri: "",
-      description: "",
-    },
   });
+
+  useEffect(() => {
+    if (open) {
+      if (mode === 'edit' && initialData) {
+        form.reset({
+          photoDataUri: initialData.photoDataUri,
+          description: initialData.description,
+          category: initialData.category,
+        });
+      } else {
+        form.reset({
+          photoDataUri: "",
+          description: "",
+        });
+      }
+    }
+  }, [open, mode, initialData, form]);
 
   const photoDataUri = form.watch("photoDataUri");
 
@@ -129,27 +146,24 @@ export function AddItemDialog({ onAddItem, open, onOpenChange }: AddItemDialogPr
     }
   };
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
-    onAddItem(values);
+    onSave(values);
     setIsSubmitting(false);
-    form.reset();
     onOpenChange(false);
   };
   
   const currentTranslations = translations.addItemDialog;
+  const title = mode === 'edit' ? currentTranslations.editTitle : currentTranslations.title;
+  const description = mode === 'edit' ? currentTranslations.editDescription : currentTranslations.description;
+  const submitButtonText = mode === 'edit' ? currentTranslations.updateButton : currentTranslations.submitButton;
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => {
-      if (!isOpen) form.reset();
-      onOpenChange(isOpen);
-    }}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{currentTranslations.title}</DialogTitle>
-          <DialogDescription>
-            {currentTranslations.description}
-          </DialogDescription>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -273,7 +287,7 @@ export function AddItemDialog({ onAddItem, open, onOpenChange }: AddItemDialogPr
                 {(isSubmitting || isGenerating) && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                {currentTranslations.submitButton}
+                {submitButtonText}
               </Button>
             </DialogFooter>
           </form>

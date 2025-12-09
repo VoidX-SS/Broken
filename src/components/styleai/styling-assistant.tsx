@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Sparkles, User, Bot, Loader2 } from "lucide-react";
+import { Sparkles, User, Bot, Loader2, Mic, StopCircle } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,6 +9,7 @@ import Image from "next/image";
 
 import { suggestOutfit } from "@/ai/flows/suggest-outfit-from-wardrobe";
 import { extractOutfitFromText } from "@/ai/flows/extract-outfit-from-text";
+import { generateSpeechFromText, type GenerateSpeechOutput } from "@/ai/flows/generate-speech-from-text";
 import type { WardrobeItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -24,7 +25,15 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
@@ -35,24 +44,21 @@ interface StylingAssistantProps {
 const formSchema = z.object({
   occasion: z.string().min(3, "Please describe the occasion."),
   weather: z.string().min(3, "Please describe the weather."),
+  gender: z.enum(["male", "female"], { required_error: "Please select a gender."}),
+  style: z.string().min(3, "Please describe the desired style."),
 });
 
 type Message = {
   id: string;
   sender: "user" | "ai";
   text: string | React.ReactNode;
+  audio?: GenerateSpeechOutput;
 };
-
-type OutfitSuggestion = {
-  suggestion: string;
-  reasoning: string;
-  items: WardrobeItem[];
-}
 
 export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
   const { language, translations } = useLanguage();
   const currentTranslations = translations.stylingAssistant;
-
+  
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "initial",
@@ -61,8 +67,11 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
     },
   ]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   const { toast } = useToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   useEffect(() => {
     setMessages([
@@ -76,7 +85,7 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: { occasion: "", weather: "" },
+    defaultValues: { occasion: "", weather: "", style: "" },
   });
 
   useEffect(() => {
@@ -88,6 +97,51 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
     }
   }, [messages]);
 
+  const handleStartRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorderRef.current = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        audioChunksRef.current.push(event.data);
+      };
+
+      mediaRecorderRef.current.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        // This is where you would send the audio to a Speech-to-Text API
+        // For this example, we'll use a placeholder.
+        // In a real app, you would get the transcript and set it.
+        // const transcript = await speechToTextAPI(audioBlob);
+        // form.setValue("occasion", transcript);
+
+        // For now, let's just log a message. This part requires a proper STT service.
+         toast({
+          title: "Ghi âm đã dừng",
+          description: "Chức năng chuyển giọng nói thành văn bản đang được phát triển.",
+        });
+      };
+
+      mediaRecorderRef.current.start();
+      setIsRecording(true);
+    } catch (err) {
+      console.error("Error accessing microphone:", err);
+      toast({
+        variant: "destructive",
+        title: "Lỗi Micro",
+        description: "Không thể truy cập micro. Vui lòng kiểm tra quyền truy cập.",
+      });
+    }
+  };
+
+  const handleStopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+      mediaRecorderRef.current.stop();
+    }
+    setIsRecording(false);
+  };
+
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (wardrobe.length === 0) {
       toast({
@@ -98,10 +152,17 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
       return;
     }
 
+    const userMessageText = `
+      ${currentTranslations.gender}: ${values.gender === 'male' ? currentTranslations.male : currentTranslations.female}, 
+      ${currentTranslations.style}: ${values.style}, 
+      ${currentTranslations.occasion}: ${values.occasion}, 
+      ${currentTranslations.weather}: ${values.weather}
+    `;
+
     const userMessage: Message = {
       id: `user-${Date.now()}`,
       sender: "user",
-      text: `${currentTranslations.occasion}: ${values.occasion}, ${currentTranslations.weather}: ${values.weather}`,
+      text: userMessageText,
     };
     setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
@@ -111,13 +172,19 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
         wardrobe,
         occasion: values.occasion,
         weather: values.weather,
+        gender: values.gender,
+        style: values.style,
         language: language === 'vi' ? 'Vietnamese' : 'English',
       });
       
-      const extractedOutfit = await extractOutfitFromText({
-        suggestionText: suggestionResult.suggestion,
-        wardrobe: wardrobe,
-      });
+      const [extractedOutfit, speechResult] = await Promise.all([
+        extractOutfitFromText({
+          suggestionText: suggestionResult.suggestion,
+          wardrobe: wardrobe,
+        }),
+        generateSpeechFromText(suggestionResult.suggestion),
+      ]);
+
 
       const aiMessage: Message = {
         id: `ai-${Date.now()}`,
@@ -148,6 +215,7 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
             )}
           </div>
         ),
+        audio: speechResult
       };
       setMessages((prev) => [...prev, aiMessage]);
     } catch (error) {
@@ -196,15 +264,22 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
                         </Avatar>
                         )}
                         <div
-                        className={cn(
-                            "max-w-md rounded-lg px-4 py-3 text-sm lg:max-w-lg",
-                            message.sender === "ai"
-                            ? "bg-muted"
-                            : "bg-primary text-primary-foreground"
-                        )}
+                          className={cn(
+                              "max-w-md rounded-lg px-4 py-3 text-sm lg:max-w-lg",
+                              message.sender === "ai"
+                              ? "bg-muted"
+                              : "bg-primary text-primary-foreground"
+                          )}
                         >
-                        {message.text}
+                          {message.text}
+                          {message.audio && message.audio.audio && (
+                            <audio controls autoPlay className="mt-4 w-full">
+                              <source src={message.audio.audio} type="audio/wav" />
+                              Your browser does not support the audio element.
+                            </audio>
+                          )}
                         </div>
+
                         {message.sender === "user" && (
                         <Avatar className="h-8 w-8">
                             <AvatarFallback>
@@ -241,6 +316,43 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
                 className="flex h-full flex-col gap-4"
               >
                 <div className="grid gap-4 flex-1">
+
+                  <FormField
+                    control={form.control}
+                    name="gender"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{currentTranslations.gender}</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder={currentTranslations.genderPlaceholder} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="male">{currentTranslations.male}</SelectItem>
+                            <SelectItem value="female">{currentTranslations.female}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="style"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>{currentTranslations.style}</FormLabel>
+                        <FormControl>
+                          <Input placeholder={currentTranslations.stylePlaceholder} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   <FormField
                     control={form.control}
                     name="occasion"
@@ -248,7 +360,18 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
                       <FormItem className="flex flex-col">
                         <FormLabel>{currentTranslations.occasion}</FormLabel>
                         <FormControl>
-                          <Textarea placeholder={currentTranslations.occasionPlaceholder} {...field} className="flex-1" />
+                          <div className="relative">
+                            <Textarea placeholder={currentTranslations.occasionPlaceholder} {...field} className="pr-10" />
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
+                              onClick={isRecording ? handleStopRecording : handleStartRecording}
+                            >
+                              {isRecording ? <StopCircle className="text-primary" /> : <Mic />}
+                            </Button>
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>

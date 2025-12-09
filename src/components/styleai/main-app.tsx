@@ -7,6 +7,7 @@ import {
   useMemoFirebase,
   addDocumentNonBlocking,
   deleteDocumentNonBlocking,
+  updateDocumentNonBlocking,
 } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 
@@ -52,6 +53,19 @@ export function MainApp() {
     
     addDocumentNonBlocking(clothingCollectionRef, item);
   };
+  
+  const handleUpdateItem = async (id: string, item: Omit<WardrobeItem, 'id'>) => {
+    if (!firestore) {
+      toast({
+        variant: 'destructive',
+        title: translations.toast.genericError.title,
+        description: 'Firestore not available.',
+      });
+      return;
+    }
+    const itemDocRef = doc(firestore, 'wardrobe', id);
+    updateDocumentNonBlocking(itemDocRef, item);
+  };
 
   const handleDeleteItem = async (id: string) => {
     if (!firestore) {
@@ -81,6 +95,7 @@ export function MainApp() {
               <WardrobeDisplay
                 wardrobe={wardrobe || []}
                 onAddItem={handleAddItem}
+                onUpdateItem={handleUpdateItem}
                 onDeleteItem={handleDeleteItem}
                 isLoading={isLoading}
               />

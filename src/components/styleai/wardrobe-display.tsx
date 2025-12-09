@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 interface WardrobeDisplayProps {
   wardrobe: WardrobeItem[];
   onAddItem: (item: Omit<WardrobeItem, 'id'>) => void;
+  onUpdateItem: (id: string, item: Omit<WardrobeItem, 'id'>) => void;
   onDeleteItem: (id: string) => void;
   isLoading: boolean;
 }
@@ -21,10 +22,11 @@ interface WardrobeDisplayProps {
 export function WardrobeDisplay({
   wardrobe,
   onAddItem,
+  onUpdateItem,
   onDeleteItem,
   isLoading,
 }: WardrobeDisplayProps) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const { translations } = useLanguage();
   const currentTranslations = translations.wardrobeDisplay;
 
@@ -32,14 +34,15 @@ export function WardrobeDisplay({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold tracking-tight">{currentTranslations.title}</h2>
-        <Button onClick={() => setIsDialogOpen(true)}>
+        <Button onClick={() => setIsAddDialogOpen(true)}>
           <Plus className="-ml-1 mr-2 h-4 w-4" />
           {currentTranslations.button}
         </Button>
         <AddItemDialog
-          open={isDialogOpen}
-          onOpenChange={setIsDialogOpen}
-          onAddItem={onAddItem}
+          mode="add"
+          open={isAddDialogOpen}
+          onOpenChange={setIsAddDialogOpen}
+          onSave={onAddItem}
         />
       </div>
       
@@ -59,12 +62,13 @@ export function WardrobeDisplay({
             <WardrobeItemCard
               key={item.id}
               item={item}
+              onUpdate={onUpdateItem}
               onDelete={onDeleteItem}
             />
           ))}
         </div>
       ) : (
-        <EmptyWardrobe onAddClick={() => setIsDialogOpen(true)} />
+        <EmptyWardrobe onAddClick={() => setIsAddDialogOpen(true)} />
       )}
     </div>
   );
