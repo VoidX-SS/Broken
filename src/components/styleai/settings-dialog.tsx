@@ -1,20 +1,16 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useLanguage, type Language } from "@/context/language-context";
-import { useApiKey } from '@/context/api-key-context';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -31,22 +27,8 @@ interface SettingsDialogProps {
 
 export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const { language, setLanguage, translations } = useLanguage();
-  const { apiKey, setApiKey } = useApiKey();
-  const [currentApiKey, setCurrentApiKey] = useState(apiKey || "");
-
+  
   const settingsTranslations = translations.settings;
-
-  useEffect(() => {
-    if (open) {
-      setCurrentApiKey(apiKey || "");
-    }
-  }, [open, apiKey]);
-
-
-  const handleSave = () => {
-    setApiKey(currentApiKey);
-    onOpenChange(false);
-  };
 
   const handleLanguageChange = (lang: string) => {
     setLanguage(lang as Language);
@@ -56,9 +38,9 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{translations.settings.language}</DialogTitle>
+          <DialogTitle>{translations.settings.title}</DialogTitle>
           <DialogDescription>
-            Manage your application settings.
+            {translations.settings.description}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
@@ -74,23 +56,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="api-key">{settingsTranslations.apiKey}</Label>
-            <Input
-              id="api-key"
-              type="password"
-              value={currentApiKey}
-              onChange={(e) => setCurrentApiKey(e.target.value)}
-              placeholder={settingsTranslations.apiKeyPlaceholder}
-            />
-            <p className="text-sm text-muted-foreground">
-              {settingsTranslations.apiKeyDescription}
-            </p>
-          </div>
         </div>
-        <DialogFooter>
-          <Button onClick={handleSave}>{settingsTranslations.save}</Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

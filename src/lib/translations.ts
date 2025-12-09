@@ -1,12 +1,9 @@
 export const translations = {
   vi: {
     settings: {
+      title: 'Cài đặt',
+      description: 'Quản lý cài đặt ứng dụng của bạn.',
       language: 'Ngôn ngữ',
-      apiKey: 'Khóa API Google AI',
-      apiKeyPlaceholder: 'Dán khóa API của bạn vào đây...',
-      apiKeyDescription: 'Khóa của bạn được lưu trữ an toàn trong trình duyệt của bạn.',
-      apiKeySaved: 'Đã lưu khóa API!',
-      save: 'Lưu',
     },
     categories: {
         'Shirt': 'Áo sơ mi',
@@ -106,12 +103,9 @@ export const translations = {
   },
   en: {
     settings: {
+      title: 'Settings',
+      description: 'Manage your application settings.',
       language: 'Language',
-      apiKey: 'Google AI API Key',
-      apiKeyPlaceholder: 'Paste your API key here...',
-      apiKeyDescription: 'Your key is stored securely in your browser.',
-      apiKeySaved: 'API Key saved!',
-      save: 'Save',
     },
     categories: {
         'Shirt': 'Shirt',

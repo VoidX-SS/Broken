@@ -7,7 +7,7 @@
  * - ExtractOutfitOutput - The return type for the extractOutfitFromText function.
  */
 
-import {ai, getConfig} from '@/ai/genkit';
+import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import type { WardrobeItem } from '@/lib/types';
 
@@ -21,7 +21,6 @@ const WardrobeItemSchema = z.object({
 const ExtractOutfitInputSchema = z.object({
   suggestionText: z.string().describe('The natural language text of the outfit suggestion.'),
   wardrobe: z.array(WardrobeItemSchema).describe('The full list of available wardrobe items.'),
-  apiKey: z.string().optional().describe('The Google AI API key.'),
 });
 export type ExtractOutfitInput = z.infer<typeof ExtractOutfitInputSchema>;
 
@@ -80,7 +79,7 @@ const extractOutfitFlow = ai.defineFlow(
     outputSchema: ExtractOutfitOutputSchema,
   },
   async (input) => {
-    const {output} = await prompt(input, { config: getConfig(input.apiKey) });
+    const {output} = await prompt(input);
     return output!;
   }
 );
