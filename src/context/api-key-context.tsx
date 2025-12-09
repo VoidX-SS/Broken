@@ -21,7 +21,7 @@ export function ApiKeyProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      const storedKey = localStorage.getItem('google-api-key');
+      const storedKey = localStorage.getItem('gemini-api-key');
       if (storedKey) {
         setApiKey(storedKey);
       }
@@ -33,14 +33,14 @@ export function ApiKeyProvider({ children }: { children: ReactNode }) {
 
   const handleSetApiKey = (key: string | null) => {
     try {
-      if (key) {
-        localStorage.setItem('google-api-key', key);
+      if (key && key.trim()) {
+        localStorage.setItem('gemini-api-key', key);
         setApiKey(key);
         toast({
             title: translations.settings.apiKeySaved,
         });
       } else {
-        localStorage.removeItem('google-api-key');
+        localStorage.removeItem('gemini-api-key');
         setApiKey(null);
       }
     } catch (error) {
@@ -59,8 +59,9 @@ export function ApiKeyProvider({ children }: { children: ReactNode }) {
     isApiKeySet: !!apiKey,
   }), [apiKey, translations]);
 
+  // Prevent rendering children until the key has been loaded from localStorage
   if (!isInitialized) {
-      return null; // or a loading spinner
+      return null;
   }
 
   return (

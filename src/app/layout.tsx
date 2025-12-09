@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Toaster } from "@/components/ui/toaster";
 import { LanguageProvider } from "@/context/language-context";
+import { ApiKeyProvider } from "@/context/api-key-context";
 import { FirebaseClientProvider } from "@/firebase";
 import "./globals.css";
 
@@ -27,7 +28,9 @@ export default function RootLayout({
       <body className="font-body antialiased">
         <FirebaseClientProvider>
           <LanguageProvider>
-            {children}
+            <ApiKeyProvider>
+              {children}
+            </ApiKeyProvider>
           </LanguageProvider>
         </FirebaseClientProvider>
         <Toaster />
