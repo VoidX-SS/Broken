@@ -47,7 +47,7 @@ Respond in the following language: {{{language}}}.
 
 Wardrobe:
 {{#each wardrobe}}
-- Item ID: {{{id}}}, Category: {{{category}}}, Description: {{{description}}}
+- Category: {{{category}}}, Description: {{{description}}}
 {{/each}}
 
 Occasion: {{{occasion}}}
