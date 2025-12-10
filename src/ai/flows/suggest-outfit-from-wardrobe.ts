@@ -15,16 +15,11 @@ const SuggestOutfitInputSchema = z.object({
     .array(
       z.object({
         id: z.string(),
-        photoDataUri: z
-          .string()
-          .describe(
-            "A photo of a clothing item, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
-          ),
         description: z.string().describe('The description of the clothing item.'),
         category: z.string().describe('The category of the clothing item (e.g., shirt, pants, dress).'),
       })
     )
-    .describe('The user wardrobe, represented as an array of clothing items.'),
+    .describe("The user's wardrobe, represented as an array of clothing item descriptions."),
   occasion: z.string().describe('The occasion for which the outfit is being suggested.'),
   weather: z.string().describe('The current weather conditions.'),
   gender: z.enum(['male', 'female']).describe('The gender for which the outfit is being suggested.'),
@@ -52,7 +47,7 @@ Respond in the following language: {{{language}}}.
 
 Wardrobe:
 {{#each wardrobe}}
-- Item ID: {{{id}}}, Category: {{{category}}}, Description: {{{description}}}, Photo: {{media url=photoDataUri}}
+- Item ID: {{{id}}}, Category: {{{category}}}, Description: {{{description}}}
 {{/each}}
 
 Occasion: {{{occasion}}}

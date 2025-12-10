@@ -2,12 +2,8 @@ export const translations = {
   vi: {
     settings: {
       title: 'Cài đặt',
-      description: 'Quản lý cài đặt và API key của bạn.',
+      description: 'Quản lý cài đặt ngôn ngữ của bạn.',
       language: 'Ngôn ngữ',
-      apiKeyLabel: 'Google Gemini API Key',
-      apiKeyPlaceholder: 'Dán API key của bạn vào đây',
-      apiKeyDescription: 'API key của bạn được lưu trữ an toàn trong trình duyệt.',
-      apiKeySaved: 'Đã lưu API Key!',
       saveButton: 'Lưu thay đổi',
     },
     categories: {
@@ -109,12 +105,8 @@ export const translations = {
   en: {
     settings: {
       title: 'Settings',
-      description: 'Manage your settings and API key.',
+      description: 'Manage your language settings.',
       language: 'Language',
-      apiKeyLabel: 'Google Gemini API Key',
-      apiKeyPlaceholder: 'Paste your API key here',
-      apiKeyDescription: 'Your API key is stored securely in your browser.',
-      apiKeySaved: 'API Key Saved!',
       saveButton: 'Save Changes',
     },
     categories: {

@@ -168,8 +168,14 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
     setIsLoading(true);
 
     try {
+        const wardrobeForAI = wardrobe.map(item => ({
+        id: item.id,
+        description: item.description,
+        category: item.category
+      }));
+      
       const suggestionResult = await suggestOutfit({
-        wardrobe,
+        wardrobe: wardrobeForAI,
         occasion: values.occasion,
         weather: values.weather,
         gender: values.gender,
