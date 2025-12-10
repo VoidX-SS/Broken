@@ -14,6 +14,7 @@ const SuggestOutfitInputSchema = z.object({
   wardrobe: z
     .array(
       z.object({
+        id: z.string(),
         photoDataUri: z
           .string()
           .describe(
@@ -51,7 +52,7 @@ Respond in the following language: {{{language}}}.
 
 Wardrobe:
 {{#each wardrobe}}
-- Category: {{{category}}}, Description: {{{description}}}, Photo: {{media url=photoDataUri}}
+- Item ID: {{{id}}}, Category: {{{category}}}, Description: {{{description}}}, Photo: {{media url=photoDataUri}}
 {{/each}}
 
 Occasion: {{{occasion}}}
