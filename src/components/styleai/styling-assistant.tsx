@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Sparkles, User, Bot, Loader2, Mic, StopCircle } from "lucide-react";
+import { Sparkles, User, Bot, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,14 +9,13 @@ import Image from "next/image";
 
 import { suggestOutfit } from "@/ai/flows/suggest-outfit-from-wardrobe";
 import { extractOutfitFromText } from "@/ai/flows/extract-outfit-from-text";
-import { generateSpeechFromText, type GenerateSpeechOutput } from "@/ai/flows/generate-speech-from-text";
 import type { WardrobeItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/context/language-context";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -52,7 +51,6 @@ type Message = {
   id: string;
   sender: "user" | "ai";
   text: string | React.ReactNode;
-  audio?: GenerateSpeechOutput;
 };
 
 export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
@@ -67,11 +65,8 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
     },
   ]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
   const { toast } = useToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
 
   useEffect(() => {
     setMessages([
@@ -96,51 +91,6 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
       });
     }
   }, [messages]);
-
-  const handleStartRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorderRef.current = new MediaRecorder(stream);
-      audioChunksRef.current = [];
-
-      mediaRecorderRef.current.ondataavailable = (event) => {
-        audioChunksRef.current.push(event.data);
-      };
-
-      mediaRecorderRef.current.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        // This is where you would send the audio to a Speech-to-Text API
-        // For this example, we'll use a placeholder.
-        // In a real app, you would get the transcript and set it.
-        // const transcript = await speechToTextAPI(audioBlob);
-        // form.setValue("occasion", transcript);
-
-        // For now, let's just log a message. This part requires a proper STT service.
-         toast({
-          title: "Ghi âm đã dừng",
-          description: "Chức năng chuyển giọng nói thành văn bản đang được phát triển.",
-        });
-      };
-
-      mediaRecorderRef.current.start();
-      setIsRecording(true);
-    } catch (err) {
-      console.error("Error accessing microphone:", err);
-      toast({
-        variant: "destructive",
-        title: "Lỗi Micro",
-        description: "Không thể truy cập micro. Vui lòng kiểm tra quyền truy cập.",
-      });
-    }
-  };
-
-  const handleStopRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-      mediaRecorderRef.current.stop();
-    }
-    setIsRecording(false);
-  };
-
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (wardrobe.length === 0) {
@@ -183,16 +133,10 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
         language: language === 'vi' ? 'Vietnamese' : 'English',
       });
       
-      const [extractedOutfit, speechResult] = await Promise.all([
-        extractOutfitFromText({
-          suggestionText: suggestionResult.suggestion,
-          wardrobe: wardrobe,
-        }),
-        generateSpeechFromText({
-          text: suggestionResult.suggestion,
-        }),
-      ]);
-
+      const extractedOutfit = await extractOutfitFromText({
+        suggestionText: suggestionResult.suggestion,
+        wardrobe: wardrobe,
+      });
 
       const aiMessage: Message = {
         id: `ai-${Date.now()}`,
@@ -223,7 +167,6 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
             )}
           </div>
         ),
-        audio: speechResult
       };
       setMessages((prev) => [...prev, aiMessage]);
     } catch (error) {
@@ -280,12 +223,6 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
                           )}
                         >
                           {message.text}
-                          {message.audio && message.audio.audio && (
-                            <audio controls autoPlay className="mt-4 w-full">
-                              <source src={message.audio.audio} type="audio/wav" />
-                              Your browser does not support the audio element.
-                            </audio>
-                          )}
                         </div>
 
                         {message.sender === "user" && (
@@ -368,18 +305,7 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
                       <FormItem className="flex flex-col">
                         <FormLabel>{currentTranslations.occasion}</FormLabel>
                         <FormControl>
-                          <div className="relative">
-                            <Textarea placeholder={currentTranslations.occasionPlaceholder} {...field} className="pr-10" />
-                            <Button
-                              type="button"
-                              size="icon"
-                              variant="ghost"
-                              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
-                              onClick={isRecording ? handleStopRecording : handleStartRecording}
-                            >
-                              {isRecording ? <StopCircle className="text-primary" /> : <Mic />}
-                            </Button>
-                          </div>
+                            <Textarea placeholder={currentTranslations.occasionPlaceholder} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

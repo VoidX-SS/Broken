@@ -5,6 +5,5 @@
 
 import './flows/extract-outfit-from-text';
 import './flows/generate-description-from-photo';
-import './flows/generate-speech-from-text';
 import './flows/suggest-outfit-from-wardrobe';
 import './flows/summarize-wardrobe-for-ai';
