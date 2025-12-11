@@ -1,14 +1,13 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Sparkles, User, Bot, Loader2 } from "lucide-react";
+import { Sparkles, User, Bot, Loader2, PersonStanding, PersonStandingIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Image from "next/image";
 
 import { suggestOutfit } from "@/ai/flows/suggest-outfit-from-wardrobe";
-import { extractOutfitFromText } from "@/ai/flows/extract-outfit-from-text";
 import type { WardrobeItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -26,15 +25,10 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+
 
 interface StylingAssistantProps {
   wardrobe: WardrobeItem[];
@@ -119,7 +113,6 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
 
     try {
         const wardrobeForAI = wardrobe.map(item => ({
-        id: item.id,
         description: item.description,
         category: item.category
       }));
@@ -133,11 +126,6 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
         language: language === 'vi' ? 'Vietnamese' : 'English',
       });
       
-      const extractedOutfit = await extractOutfitFromText({
-        suggestionText: suggestionResult.suggestion,
-        wardrobe: wardrobe,
-      });
-
       const aiMessage: Message = {
         id: `ai-${Date.now()}`,
         sender: "ai",
@@ -147,24 +135,6 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
               <p className="font-medium">{suggestionResult.suggestion}</p>
               <p className="text-sm text-muted-foreground">{suggestionResult.reasoning}</p>
             </div>
-            {extractedOutfit.items.length > 0 && (
-              <div>
-                <p className="mb-2 text-sm font-semibold">{currentTranslations.suggestedItems}</p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-2">
-                  {extractedOutfit.items.map((item) => (
-                    <div key={item.id} className="overflow-hidden rounded-md border">
-                       <Image
-                          src={item.photoDataUri}
-                          alt={item.description}
-                          width={100}
-                          height={100}
-                          className="h-full w-full object-cover"
-                        />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         ),
       };
@@ -261,37 +231,26 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
                 className="flex h-full flex-col gap-4"
               >
                 <div className="grid gap-4 flex-1">
-
-                  <FormField
+                   <FormField
                     control={form.control}
                     name="gender"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>{currentTranslations.gender}</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder={currentTranslations.genderPlaceholder} />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="male">{currentTranslations.male}</SelectItem>
-                            <SelectItem value="female">{currentTranslations.female}</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="style"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>{currentTranslations.style}</FormLabel>
                         <FormControl>
-                          <Input placeholder={currentTranslations.stylePlaceholder} {...field} />
+                            <ToggleGroup 
+                                type="single" 
+                                className="w-full grid grid-cols-2"
+                                value={field.value}
+                                onValueChange={field.onChange}
+                            >
+                                <ToggleGroupItem value="male" aria-label="Toggle male">
+                                    {currentTranslations.male}
+                                </ToggleGroupItem>
+                                <ToggleGroupItem value="female" aria-label="Toggle female">
+                                    {currentTranslations.female}
+                                </ToggleGroupItem>
+                            </ToggleGroup>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -305,7 +264,7 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
                       <FormItem className="flex flex-col">
                         <FormLabel>{currentTranslations.occasion}</FormLabel>
                         <FormControl>
-                            <Textarea placeholder={currentTranslations.occasionPlaceholder} {...field} />
+                            <Input placeholder={currentTranslations.occasionPlaceholder} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -318,7 +277,21 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
                       <FormItem className="flex flex-col">
                         <FormLabel>{currentTranslations.weather}</FormLabel>
                         <FormControl>
-                          <Textarea placeholder={currentTranslations.weatherPlaceholder} {...field} className="flex-1" />
+                          <Input placeholder={currentTranslations.weatherPlaceholder} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="style"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>{currentTranslations.style}</FormLabel>
+                        <FormControl>
+                          <Textarea placeholder={currentTranslations.stylePlaceholder} {...field} className="min-h-[100px] flex-1" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

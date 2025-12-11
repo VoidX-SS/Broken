@@ -14,7 +14,6 @@ const SuggestOutfitInputSchema = z.object({
   wardrobe: z
     .array(
       z.object({
-        id: z.string(),
         description: z.string().describe('The description of the clothing item.'),
         category: z.string().describe('The category of the clothing item (e.g., shirt, pants, dress).'),
       })
@@ -29,7 +28,7 @@ const SuggestOutfitInputSchema = z.object({
 export type SuggestOutfitInput = z.infer<typeof SuggestOutfitInputSchema>;
 
 const SuggestOutfitOutputSchema = z.object({
-  suggestion: z.string().describe('The outfit suggestion.'),
+  suggestion: z.string().describe('A detailed text-only outfit suggestion, describing which items to combine.'),
   reasoning: z.string().describe('The reasoning behind the outfit suggestion.'),
 });
 export type SuggestOutfitOutput = z.infer<typeof SuggestOutfitOutputSchema>;
@@ -42,21 +41,25 @@ const prompt = ai.definePrompt({
   name: 'suggestOutfitPrompt',
   input: {schema: SuggestOutfitInputSchema},
   output: {schema: SuggestOutfitOutputSchema},
-  prompt: `You are a personal stylist. Given a user's wardrobe, the occasion, weather, gender, and desired style, suggest an outfit from their wardrobe and explain your reasoning.
+  prompt: `You are a personal stylist. Your task is to suggest a complete outfit (top, bottom, accessories, etc.) using ONLY the items available in the user's wardrobe. Your response must be purely text-based.
+
+Analyze the user's request based on the provided details and their available clothing items.
+
 Respond in the following language: {{{language}}}.
 
-Wardrobe:
+USER'S REQUEST:
+- Gender: {{{gender}}}
+- Occasion: {{{occasion}}}
+- Weather: {{{weather}}}
+- Desired Style (vibe, colors, etc.): {{{style}}}
+
+AVAILABLE WARDROBE ITEMS:
 {{#each wardrobe}}
 - Category: {{{category}}}, Description: {{{description}}}
 {{/each}}
 
-Occasion: {{{occasion}}}
-Weather: {{{weather}}}
-Gender: {{{gender}}}
-Style: {{{style}}}
-
-Suggestion: 
-Reasoning: `,
+Based on the request and the available items, provide a detailed outfit suggestion and explain your reasoning.
+`,
 });
 
 const suggestOutfitFlow = ai.defineFlow(
