@@ -1,5 +1,5 @@
 
-import {genkit} from 'genkit';
+import {./genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/google-genai';
 
 // Update the defineFlow function to accept an API key
