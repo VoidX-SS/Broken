@@ -17,6 +17,7 @@ interface WardrobeDisplayProps {
   onUpdateItem: (id: string, item: Omit<WardrobeItem, 'id'>) => void;
   onDeleteItem: (id: string) => void;
   isLoading: boolean;
+  highlightedItemIds?: string[];
 }
 
 export function WardrobeDisplay({
@@ -25,6 +26,7 @@ export function WardrobeDisplay({
   onUpdateItem,
   onDeleteItem,
   isLoading,
+  highlightedItemIds = [],
 }: WardrobeDisplayProps) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const { translations } = useLanguage();
@@ -64,6 +66,7 @@ export function WardrobeDisplay({
               item={item}
               onUpdate={onUpdateItem}
               onDelete={onDeleteItem}
+              isHighlighted={highlightedItemIds.includes(item.id)}
             />
           ))}
         </div>

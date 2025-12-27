@@ -4,8 +4,8 @@
  * @fileOverview A Genkit flow that suggests an outfit based on user's wardrobe and preferences.
  *
  * This file defines the `suggestOutfit` flow. The flow takes user preferences (occasion, weather, style)
- * and a list of available wardrobe items (description and category only) to generate a
- * text-based outfit suggestion.
+ * and a list of available wardrobe items (id, description and category) to generate a
+ * text-based outfit suggestion and a list of the IDs of the suggested items.
  */
 
 import {ai} from '@/ai/genkit';
@@ -20,7 +20,7 @@ import {
  * A wrapper function that invokes the `suggestOutfitFlow`.
  * This function is exported and can be called from server-side components.
  * @param input The input object containing user preferences and wardrobe items.
- * @returns A promise that resolves to the suggested outfit.
+ * @returns A promise that resolves to the suggested outfit and the IDs of the items.
  */
 export async function suggestOutfit(input: SuggestOutfitInput): Promise<SuggestOutfitOutput> {
   return suggestOutfitFlow(input);
@@ -31,11 +31,12 @@ const suggestOutfitPrompt = ai.definePrompt({
   name: 'suggestOutfitPrompt',
   input: {schema: SuggestOutfitInputSchema},
   output: {schema: SuggestOutfitOutputSchema},
-
+  
   // The prompt instructs the AI to act as a personal stylist.
   prompt: `You are a personal stylist. Your task is to suggest a complete outfit (top, bottom, accessories, etc.) using ONLY the items available in the user's wardrobe.
 
     Analyze the user's request based on the provided details and their available clothing items.
+    Your response MUST include the 'id' of each clothing item you select in the 'suggestedItemIds' field.
 
     Respond in the following language: {{{language}}}.
 
@@ -45,9 +46,9 @@ const suggestOutfitPrompt = ai.definePrompt({
     - Weather: {{{weather}}}
     - Desired Style (vibe, colors, etc.): {{{style}}}
 
-    AVAILABLE WARDROBE ITEMS (Category, Description):
+    AVAILABLE WARDROBE ITEMS (ID, Category, Description):
     {{#each wardrobe}}
-    - {{{this.category}}}, {{{this.description}}}
+    - {{{this.id}}}, {{{this.category}}}, {{{this.description}}}
     {{/each}}
     `,
 

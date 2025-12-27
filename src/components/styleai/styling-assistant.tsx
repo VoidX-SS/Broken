@@ -32,6 +32,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 interface StylingAssistantProps {
   wardrobe: WardrobeItem[];
+  onSuggestion: (itemIds: string[]) => void;
 }
 
 const formSchema = z.object({
@@ -47,7 +48,7 @@ type Message = {
   text: string | React.ReactNode;
 };
 
-export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
+export function StylingAssistant({ wardrobe, onSuggestion }: StylingAssistantProps) {
   const { language, translations } = useLanguage();
   const currentTranslations = translations.stylingAssistant;
   
@@ -95,6 +96,9 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
       });
       return;
     }
+    
+    // Clear previous highlights
+    onSuggestion([]);
 
     const userMessageText = `
       ${currentTranslations.gender}: ${values.gender === 'male' ? currentTranslations.male : currentTranslations.female}, 
@@ -113,6 +117,7 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
 
     try {
         const wardrobeForAI = wardrobe.map(item => ({
+        id: item.id,
         description: item.description,
         category: item.category
       }));
@@ -139,6 +144,8 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
         ),
       };
       setMessages((prev) => [...prev, aiMessage]);
+      onSuggestion(suggestionResult.suggestedItemIds || []);
+
     } catch (error) {
       console.error("AI suggestion failed:", error);
       toast({

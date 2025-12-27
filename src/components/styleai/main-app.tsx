@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   useCollection,
   useFirestore,
@@ -22,6 +22,7 @@ export function MainApp() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const { translations } = useLanguage();
+  const [highlightedItemIds, setHighlightedItemIds] = useState<string[]>([]);
 
   const wardrobeCollectionQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -80,6 +81,10 @@ export function MainApp() {
     deleteDocumentNonBlocking(itemDocRef);
   };
   
+  const handleSuggestion = (itemIds: string[]) => {
+    setHighlightedItemIds(itemIds);
+  };
+  
   const isLoading = isWardrobeLoading;
 
   return (
@@ -88,7 +93,7 @@ export function MainApp() {
       <main className="flex-1">
         <div className="container mx-auto grid flex-1 gap-12 p-4 md:grid-cols-3 md:p-8 lg:grid-cols-[2fr_1fr]">
           <div className="md:col-span-2 lg:col-span-1">
-            <StylingAssistant wardrobe={wardrobe || []} />
+            <StylingAssistant wardrobe={wardrobe || []} onSuggestion={handleSuggestion} />
           </div>
           <aside className="md:col-span-1 lg:col-span-1">
             <div className="sticky top-24">
@@ -98,6 +103,7 @@ export function MainApp() {
                 onUpdateItem={handleUpdateItem}
                 onDeleteItem={handleDeleteItem}
                 isLoading={isLoading}
+                highlightedItemIds={highlightedItemIds}
               />
             </div>
           </aside>

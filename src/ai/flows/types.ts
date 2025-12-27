@@ -34,10 +34,11 @@ export type GenerateDescriptionOutput = z.infer<
 export const SuggestOutfitInputSchema = z.object({
   wardrobe: z.array(
     z.object({
+      id: z.string(),
       description: z.string(),
       category: z.enum(wardrobeCategories),
     })
-  ).describe('A list of available wardrobe items.'),
+  ).describe('A list of available wardrobe items with their IDs.'),
   occasion: z.string().describe("The event or occasion for the outfit."),
   weather: z.string().describe('The current weather conditions.'),
   gender: z.enum(['male', 'female']).describe('The gender of the user.'),
@@ -49,5 +50,6 @@ export type SuggestOutfitInput = z.infer<typeof SuggestOutfitInputSchema>;
 export const SuggestOutfitOutputSchema = z.object({
   suggestion: z.string().describe("The detailed outfit suggestion."),
   reasoning: z.string().describe("The reasoning behind the suggestion."),
+  suggestedItemIds: z.array(z.string()).describe("An array of IDs of the suggested clothing items from the wardrobe."),
 });
 export type SuggestOutfitOutput = z.infer<typeof SuggestOutfitOutputSchema>;

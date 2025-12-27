@@ -24,14 +24,16 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { AddItemDialog } from './add-item-dialog';
+import { cn } from '@/lib/utils';
 
 interface WardrobeItemCardProps {
   item: WardrobeItem;
   onUpdate: (id: string, item: Omit<WardrobeItem, 'id'>) => void;
   onDelete: (id: string) => void;
+  isHighlighted?: boolean;
 }
 
-export function WardrobeItemCard({ item, onUpdate, onDelete }: WardrobeItemCardProps) {
+export function WardrobeItemCard({ item, onUpdate, onDelete, isHighlighted }: WardrobeItemCardProps) {
   const { language, translations } = useLanguage();
   const deleteDialogTranslations = translations.deleteDialog;
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -41,7 +43,10 @@ export function WardrobeItemCard({ item, onUpdate, onDelete }: WardrobeItemCardP
   };
 
   return (
-    <Card className="group relative overflow-hidden transition-all duration-300 hover:shadow-xl">
+    <Card className={cn(
+        "group relative overflow-hidden transition-all duration-300 hover:shadow-xl",
+        isHighlighted && "ring-2 ring-primary ring-offset-2"
+        )}>
        <AddItemDialog
         mode="edit"
         open={isEditDialogOpen}
