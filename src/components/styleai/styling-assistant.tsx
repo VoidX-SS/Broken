@@ -245,10 +245,10 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
                                 value={field.value}
                                 onValueChange={field.onChange}
                             >
-                                <ToggleGroupItem value="male" aria-label="Toggle male" className="data-[state=on]:bg-primary/20 data-[state=on]:text-primary-foreground">
+                                <ToggleGroupItem value="male" aria-label="Toggle male" className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
                                     {currentTranslations.male}
                                 </ToggleGroupItem>
-                                <ToggleGroupItem value="female" aria-label="Toggle female" className="data-[state=on]:bg-primary/20 data-[state=on]:text-primary-foreground">
+                                <ToggleGroupItem value="female" aria-label="Toggle female" className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
                                     {currentTranslations.female}
                                 </ToggleGroupItem>
                             </ToggleGroup>
