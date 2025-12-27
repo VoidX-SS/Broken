@@ -32,6 +32,20 @@ export function WardrobeDisplay({
   const { translations } = useLanguage();
   const currentTranslations = translations.wardrobeDisplay;
 
+  const sortedWardrobe = React.useMemo(() => {
+    if (!highlightedItemIds || highlightedItemIds.length === 0) {
+      return wardrobe;
+    }
+    return [...wardrobe].sort((a, b) => {
+      const aIsHighlighted = highlightedItemIds.includes(a.id);
+      const bIsHighlighted = highlightedItemIds.includes(b.id);
+      if (aIsHighlighted && !bIsHighlighted) return -1;
+      if (!aIsHighlighted && bIsHighlighted) return 1;
+      return 0;
+    });
+  }, [wardrobe, highlightedItemIds]);
+
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -58,9 +72,9 @@ export function WardrobeDisplay({
             </div>
           ))}
         </div>
-      ) : wardrobe.length > 0 ? (
+      ) : sortedWardrobe.length > 0 ? (
         <div className="grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
-          {wardrobe.map((item) => (
+          {sortedWardrobe.map((item) => (
             <WardrobeItemCard
               key={item.id}
               item={item}

@@ -10,5 +10,5 @@ export const ai = genkit({
     apiKey: process.env.GEMINI_API_KEY,
   })],
   // Use gemini-3-flash-preview as it's a fast and capable model
-  model: 'googleai/gemini-pro',
+  model: 'googleai/gemini-3-flash-preview',
 });
