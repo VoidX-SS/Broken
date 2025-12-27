@@ -96,7 +96,6 @@ export function AddItemDialog({ mode, onSave, open, onOpenChange, initialData }:
       const result = await generateDescriptionForClothingItem({ 
         photoDataUri: photo,
         language: language === 'vi' ? 'Vietnamese' : 'English',
-        categories: [...wardrobeCategories],
       });
       form.setValue("description", result.description, { shouldValidate: true });
       form.setValue("category", result.category, { shouldValidate: true });

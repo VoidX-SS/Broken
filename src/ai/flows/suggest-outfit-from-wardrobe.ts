@@ -1,75 +1,83 @@
+
 'use server';
 /**
- * @fileOverview An AI agent that suggests outfits from a user's wardrobe.
+ * @fileOverview A Genkit flow that suggests an outfit based on user's wardrobe and preferences.
  *
- * - suggestOutfit - A function that handles the outfit suggestion process.
- * - SuggestOutfitInput - The input type for the suggestOutfit function.
- * - SuggestOutfitOutput - The return type for the suggestOutfit function.
+ * This file defines the `suggestOutfit` flow. The flow takes user preferences (occasion, weather, style)
+ * and a list of available wardrobe items (description and category only) to generate a
+ * text-based outfit suggestion.
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {
+  SuggestOutfitInputSchema,
+  SuggestOutfitOutputSchema,
+  type SuggestOutfitInput,
+  type SuggestOutfitOutput,
+} from '@/ai/flows/types';
 
-const SuggestOutfitInputSchema = z.object({
-  wardrobe: z
-    .array(
-      z.object({
-        description: z.string().describe('The description of the clothing item.'),
-        category: z.string().describe('The category of the clothing item (e.g., shirt, pants, dress).'),
-      })
-    )
-    .describe("The user's wardrobe, represented as an array of clothing item descriptions."),
-  occasion: z.string().describe('The occasion for which the outfit is being suggested.'),
-  weather: z.string().describe('The current weather conditions.'),
-  gender: z.enum(['male', 'female']).describe('The gender for which the outfit is being suggested.'),
-  style: z.string().describe('The desired style for the outfit (e.g., casual, formal, chic).'),
-  language: z.string().describe('The language for the AI to respond in (e.g., "English", "Vietnamese").'),
-});
-export type SuggestOutfitInput = z.infer<typeof SuggestOutfitInputSchema>;
-
-const SuggestOutfitOutputSchema = z.object({
-  suggestion: z.string().describe('A detailed text-only outfit suggestion, describing which items to combine.'),
-  reasoning: z.string().describe('The reasoning behind the outfit suggestion.'),
-});
-export type SuggestOutfitOutput = z.infer<typeof SuggestOutfitOutputSchema>;
-
+/**
+ * A wrapper function that invokes the `suggestOutfitFlow`.
+ * This function is exported and can be called from server-side components.
+ * @param input The input object containing user preferences and wardrobe items.
+ * @returns A promise that resolves to the suggested outfit.
+ */
 export async function suggestOutfit(input: SuggestOutfitInput): Promise<SuggestOutfitOutput> {
   return suggestOutfitFlow(input);
 }
 
-const prompt = ai.definePrompt({
+// Define the prompt for the AI model.
+const suggestOutfitPrompt = ai.definePrompt({
   name: 'suggestOutfitPrompt',
   input: {schema: SuggestOutfitInputSchema},
   output: {schema: SuggestOutfitOutputSchema},
-  prompt: `You are a personal stylist. Your task is to suggest a complete outfit (top, bottom, accessories, etc.) using ONLY the items available in the user's wardrobe. Your response must be purely text-based.
 
-Analyze the user's request based on the provided details and their available clothing items.
+  // The prompt instructs the AI to act as a personal stylist.
+  prompt: `You are a personal stylist. Your task is to suggest a complete outfit (top, bottom, accessories, etc.) using ONLY the items available in the user's wardrobe.
 
-Respond in the following language: {{{language}}}.
+    Analyze the user's request based on the provided details and their available clothing items.
 
-USER'S REQUEST:
-- Gender: {{{gender}}}
-- Occasion: {{{occasion}}}
-- Weather: {{{weather}}}
-- Desired Style (vibe, colors, etc.): {{{style}}}
+    Respond in the following language: {{{language}}}.
 
-AVAILABLE WARDROBE ITEMS:
-{{#each wardrobe}}
-- Category: {{{category}}}, Description: {{{description}}}
-{{/each}}
+    USER'S REQUEST:
+    - Gender: {{{gender}}}
+    - Event: {{{occasion}}}
+    - Weather: {{{weather}}}
+    - Desired Style (vibe, colors, etc.): {{{style}}}
 
-Based on the request and the available items, provide a detailed outfit suggestion and explain your reasoning.
-`,
+    AVAILABLE WARDROBE ITEMS (Category, Description):
+    {{#each wardrobe}}
+    - {{{this.category}}}, {{{this.description}}}
+    {{/each}}
+    `,
+
+  // Configure the model for JSON output.
+  config: {
+    response: {
+      format: 'json',
+    },
+    // @ts-ignore: Do SDK có thể chưa cập nhật type definition cho thinkingConfig kịp thời
+    thinkingConfig: {
+      includeThoughts: true,
+      thoughtBudgetTokens: 1024,
+    },
+  },
 });
 
+// Define the main flow.
 const suggestOutfitFlow = ai.defineFlow(
   {
     name: 'suggestOutfitFlow',
     inputSchema: SuggestOutfitInputSchema,
     outputSchema: SuggestOutfitOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
+  async (input: SuggestOutfitInput) => {
+    const {output} = await suggestOutfitPrompt(input);
+
+    if (!output) {
+      throw new Error('The AI returned a null response.');
+    }
+
+    return output;
   }
 );

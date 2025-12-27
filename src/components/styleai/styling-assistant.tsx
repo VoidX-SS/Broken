@@ -2,14 +2,13 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Sparkles, User, Bot, Loader2, PersonStanding, PersonStandingIcon } from "lucide-react";
+import { Sparkles, User, Bot, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import Image from "next/image";
 
 import { suggestOutfit } from "@/ai/flows/suggest-outfit-from-wardrobe";
-import { WardrobeItem } from "@/ai/flows/types";
+import type { WardrobeItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/context/language-context";
@@ -133,8 +132,8 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
         text: (
           <div className="space-y-4">
             <div className="space-y-2">
-              <p className="font-medium">{suggestionResult.suggestion}</p>
-              <p className="text-sm text-muted-foreground">{suggestionResult.reasoning}</p>
+              <p className="font-medium whitespace-pre-wrap">{suggestionResult.suggestion}</p>
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{suggestionResult.reasoning}</p>
             </div>
           </div>
         ),

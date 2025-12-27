@@ -1,3 +1,4 @@
+
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/google-genai';
 
@@ -6,8 +7,8 @@ export const ai = genkit({
   plugins: [googleAI({
     // Pass the API key when initializing the plugin.
     // The key can be provided as a string or a promise that resolves to a string.
-    apiKey: process.env.GEMINI_API_KEY,
+    apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY,
   })],
-  // Use gemini-pro as it's a fast and capable model
-  model: 'googleai/gemini-pro',
+  // Use gemini-3-flash-preview as it's a fast and capable model
+  model: 'googleai/gemini-3-flash-preview',
 });

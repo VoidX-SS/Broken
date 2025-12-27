@@ -1,61 +1,80 @@
+
 'use server';
 /**
- * @fileOverview An AI agent that generates a description and category for a clothing item from a photo.
+ * @fileOverview A Genkit flow that generates a description and category for a clothing item from a photo.
  *
- * - generateDescriptionForClothingItem - A function that handles the description and category generation process.
- * - GenerateDescriptionInput - The input type for the generateDescriptionForClothingItem function.
- * - GenerateDescriptionOutput - The return type for the generateDescriptionForClothingItem function.
+ * This file defines the `generateDescriptionForClothingItem` flow, which takes a data URI of a clothing
+ * item's photo and returns a structured JSON object containing a generated description and the most
+ * appropriate category for the item.
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
-import { wardrobeCategories } from '@/lib/types';
+import {
+  GenerateDescriptionInputSchema,
+  GenerateDescriptionOutputSchema,
+  type GenerateDescriptionInput,
+  type GenerateDescriptionOutput,
+} from '@/ai/flows/types';
+import {wardrobeCategories} from '@/lib/types';
 
-const GenerateDescriptionInputSchema = z.object({
-  photoDataUri: z
-    .string()
-    .describe(
-      "A photo of a clothing item, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
-    ),
-  language: z.string().describe('The language for the AI to respond in (e.g., "English", "Vietnamese").'),
-  categories: z.array(z.string()).describe('A list of valid clothing categories to choose from.'),
-});
-export type GenerateDescriptionInput = z.infer<typeof GenerateDescriptionInputSchema>;
-
-const GenerateDescriptionOutputSchema = z.object({
-  description: z.string().describe('A concise, descriptive summary of the clothing item in the photo, including color, style, and type. For example, "Blue floral print summer dress" or "Black leather biker jacket".'),
-  category: z.enum(wardrobeCategories).describe('The most fitting category for the clothing item from the provided list.'),
-});
-export type GenerateDescriptionOutput = z.infer<typeof GenerateDescriptionOutputSchema>;
-
-
-export async function generateDescriptionForClothingItem(input: GenerateDescriptionInput): Promise<GenerateDescriptionOutput> {
-  return generateDescriptionFlow(input);
+/**
+ * A wrapper function that invokes the `generateDescriptionForClothingItemFlow`.
+ * This function is exported and can be called from server-side components.
+ * @param input The input object containing the photo data URI.
+ * @returns A promise that resolves to the generated description and category.
+ */
+export async function generateDescriptionForClothingItem(
+  input: GenerateDescriptionInput
+): Promise<GenerateDescriptionOutput> {
+  // Delegate the call to the Genkit flow.
+  return generateDescriptionForClothingItemFlow(input);
 }
 
-const prompt = ai.definePrompt({
+// Define the prompt for the AI model.
+const generateDescriptionPrompt = ai.definePrompt({
   name: 'generateDescriptionPrompt',
   input: {schema: GenerateDescriptionInputSchema},
   output: {schema: GenerateDescriptionOutputSchema},
+
+  // The prompt instructs the AI to act as a fashion cataloger.
   prompt: `You are an expert fashion cataloger. Analyze the provided image of a clothing item.
-1.  Generate a concise, descriptive summary. The description should include the item's color, style, and type. For example, if the image shows a blue dress with a floral pattern, a good description would be "Blue floral print summer dress".
-2.  Choose the most appropriate category for the item from the following list.
+    1. Generate a concise, descriptive summary. The description should include the item's color, style, and type. For example, if the image shows a blue dress with a floral pattern, a good description would be "Blue floral print summer dress".
+    2. Choose the most appropriate category for the item from the following list.
 
-Available Categories: {{{json categories}}}
+    Available Categories: ${JSON.stringify(wardrobeCategories)}
+    Respond in the following language: {{{language}}}.
+    
+    Image to analyze: {{media url=photoDataUri}}`,
 
-Respond in the following language: {{{language}}}.
-
-Image: {{media url=photoDataUri}}`,
+  // Configure the model for JSON output.
+  config: {
+    response: {
+      format: 'json',
+    },
+    // @ts-ignore: Do SDK có thể chưa cập nhật type definition cho thinkingConfig kịp thời
+    thinkingConfig: {
+      includeThoughts: true,
+      thoughtBudgetTokens: 1024,
+    },
+  },
 });
 
-const generateDescriptionFlow = ai.defineFlow(
+// Define the main flow.
+const generateDescriptionForClothingItemFlow = ai.defineFlow(
   {
-    name: 'generateDescriptionFlow',
+    name: 'generateDescriptionForClothingItemFlow',
     inputSchema: GenerateDescriptionInputSchema,
     outputSchema: GenerateDescriptionOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
+  async (input: GenerateDescriptionInput) => {
+    // Generate content using the defined prompt.
+    const {output} = await generateDescriptionPrompt(input);
+
+    // Validate the output to ensure it's not null.
+    if (!output) {
+      throw new Error('The AI returned a null response.');
+    }
+
+    return output;
   }
 );
