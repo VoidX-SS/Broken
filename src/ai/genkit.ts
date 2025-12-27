@@ -8,6 +8,6 @@ export const ai = genkit({
     // The key can be provided as a string or a promise that resolves to a string.
     apiKey: process.env.GEMINI_API_KEY,
   })],
-  // Use gemini-2.5-flash-lite as it's a fast and capable model
-  model: 'googleai/gemini-2.5-flash',
+  // Use gemini-pro as it's a fast and capable model
+  model: 'googleai/gemini-pro',
 });
