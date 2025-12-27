@@ -52,14 +52,10 @@ const suggestOutfitPrompt = ai.definePrompt({
     `,
 
   // Configure the model for JSON output.
-  response: {
-    format: 'json',
-  },
   config: {
     // @ts-ignore: Do SDK có thể chưa cập nhật type definition cho thinkingConfig kịp thời
     thinkingConfig: {
-      includeThoughts: true,
-      thoughtBudgetTokens: 1024,
+      includeThoughts: true
     },
   },
 });
