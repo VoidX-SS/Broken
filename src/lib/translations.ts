@@ -1,3 +1,4 @@
+
 export const translations = {
   vi: {
     settings: {
@@ -75,7 +76,7 @@ export const translations = {
       female: 'Nữ',
       style: 'Phong cách mong muốn',
       stylePlaceholder: 'ví dụ: Năng động, thanh lịch...',
-      occasion: 'Dịp',
+      occasion: 'Sự kiện',
       weather: 'Thời tiết',
       occasionPlaceholder: 'ví dụ: Đi cà phê với bạn bè, đi dự tiệc cưới...',
       weatherPlaceholder: 'ví dụ: Trời nắng ấm, có gió nhẹ...',
@@ -178,7 +179,7 @@ export const translations = {
       female: 'Female',
       style: 'Desired Style',
       stylePlaceholder: 'e.g., Casual, elegant, sporty...',
-      occasion: 'Occasion',
+      occasion: 'Event',
       weather: 'Weather',
       occasionPlaceholder: 'e.g., Casual brunch with friends, wedding party...',
       weatherPlaceholder: 'e.g., Sunny and warm, a bit windy...',

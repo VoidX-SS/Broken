@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
@@ -8,7 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import Image from "next/image";
 
 import { suggestOutfit } from "@/ai/flows/suggest-outfit-from-wardrobe";
-import type { WardrobeItem } from "@/lib/types";
+import { WardrobeItem } from "@/ai/flows/types";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/context/language-context";
@@ -240,14 +241,14 @@ export function StylingAssistant({ wardrobe }: StylingAssistantProps) {
                         <FormControl>
                             <ToggleGroup 
                                 type="single" 
-                                className="w-full grid grid-cols-2"
+                                className="w-full grid grid-cols-2 border rounded-md p-1"
                                 value={field.value}
                                 onValueChange={field.onChange}
                             >
-                                <ToggleGroupItem value="male" aria-label="Toggle male">
+                                <ToggleGroupItem value="male" aria-label="Toggle male" className="data-[state=on]:bg-primary/20 data-[state=on]:text-primary-foreground">
                                     {currentTranslations.male}
                                 </ToggleGroupItem>
-                                <ToggleGroupItem value="female" aria-label="Toggle female">
+                                <ToggleGroupItem value="female" aria-label="Toggle female" className="data-[state=on]:bg-primary/20 data-[state=on]:text-primary-foreground">
                                     {currentTranslations.female}
                                 </ToggleGroupItem>
                             </ToggleGroup>
